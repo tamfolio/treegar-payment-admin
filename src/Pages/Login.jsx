@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { useLogin, isAuthenticated } from '../hooks/authHooks';
+import { useLogin, isAuthenticated } from '../hooks/authhooks';
 import treegarLogo from '/Images/treegarlogo.svg';
 
 const Login = () => {
