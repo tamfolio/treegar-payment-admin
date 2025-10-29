@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAccounts } from '../hooks/accounthooks';
-import { useDashboardMetrics } from '../hooks/dashboardHooks';
+import { useDashboardMetrics } from '../hooks/DashboardHooks';
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-NG', {
