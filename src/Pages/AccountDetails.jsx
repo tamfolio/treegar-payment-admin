@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
 import { useLogout, getCurrentUser } from '../hooks/authhooks';
 import { useAccountTransactions } from '../hooks/transactionHooks';
+import LogoutModal from '../components/LogoutModal';
 import treegarLogo from '/Images/treegarlogo.svg';
 
 const formatCurrency = (amount) => {
@@ -29,6 +30,7 @@ const AccountDetails = () => {
   
   const accountId = parseInt(id, 10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const pageSize = 100;
 
   console.log('🔍 Component render - Account ID:', accountId);
@@ -63,14 +65,27 @@ const AccountDetails = () => {
     hasTransactions
   });
 
-  // Handle logout
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      logoutMutation.mutate(undefined, {
-        onSuccess: () => navigate('/login', { replace: true }),
-        onError: () => navigate('/login', { replace: true })
-      });
-    }
+  // Handle logout - show modal instead of window.confirm
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        setShowLogoutModal(false);
+        navigate('/login', { replace: true });
+      },
+      onError: (error) => {
+        console.error('Logout error:', error);
+        setShowLogoutModal(false);
+        navigate('/login', { replace: true });
+      }
+    });
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
   };
 
   // Handle pagination
@@ -131,6 +146,14 @@ const AccountDetails = () => {
         ID: {accountId} | Loading: {isLoading ? 'Yes' : 'No'} | Count: {transactions.length}
       </div>
 
+      {/* Logout Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={handleLogoutCancel}
+        onConfirm={handleLogoutConfirm}
+        isLoading={logoutMutation.isPending}
+      />
+
       {/* Sidebar */}
       <div className="w-64 bg-gray-900 text-white h-full fixed left-0 top-0 overflow-y-auto">
         <div className="p-6 border-b border-gray-800">
@@ -172,8 +195,11 @@ const AccountDetails = () => {
               <button onClick={() => refetch()} disabled={isFetching} className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50">
                 {isFetching ? 'Refreshing...' : 'Refresh'}
               </button>
-              <button onClick={handleLogout} disabled={logoutMutation.isPending} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${logoutMutation.isPending ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700'}`}>
-                {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
+              <button 
+                onClick={handleLogoutClick} 
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                Logout
               </button>
             </div>
           </div>
