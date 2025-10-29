@@ -59,3 +59,105 @@ export const useInvalidateTransactions = () => {
     }
   };
 };
+
+export const useAllTransactions = (page = 1, pageSize = 20, searchTerm = '') => {
+    return useQuery({
+      queryKey: [TRANSACTIONS_QUERY_KEYS.TRANSACTIONS, 'all', page, pageSize, searchTerm],
+      queryFn: async () => {
+        console.log('🔍 Fetching all transactions - Page:', page, 'PageSize:', pageSize, 'Search:', searchTerm);
+        
+        const params = {
+          page,
+          pageSize,
+        };
+        
+        // Add search term if provided
+        if (searchTerm && searchTerm.trim()) {
+          params.search = searchTerm.trim();
+        }
+        
+        const response = await apiService.get('/transactions', params);
+        
+        console.log('📡 All transactions API response:', response);
+        return response;
+      },
+      enabled: true,
+      staleTime: 2 * 60 * 1000, // 2 minutes
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    });
+  };
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
