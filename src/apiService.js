@@ -1,7 +1,10 @@
 import axios from 'axios';
 
-// Base configuration - using proxy for development
-const BASE_URL = '/api/Admin'; // This will be proxied to the actual API
+// Environment-based configuration
+const isDevelopment = import.meta.env.MODE === 'development';
+const BASE_URL = isDevelopment 
+  ? '/api/Admin' // Use proxy in development
+  : 'https://treegar-accounts-api.treegar.com/api/Admin'; // Direct API in production
 
 // API Key - directly declared here
 const API_KEY = 'treegaristhePnce@@!!!9801';
@@ -32,9 +35,10 @@ apiClient.interceptors.request.use(
     
     // Enhanced debugging
     console.group('🚀 API Request');
+    console.log('Environment:', isDevelopment ? 'Development' : 'Production');
     console.log('Method:', config.method?.toUpperCase());
+    console.log('Base URL:', config.baseURL);
     console.log('URL:', `${config.baseURL}${config.url}`);
-    console.log('Full URL (proxied):', `https://treegar-accounts-api.treegar.com${config.baseURL}${config.url}`);
     console.log('Headers:', config.headers);
     console.log('Data:', config.data);
     console.groupEnd();
