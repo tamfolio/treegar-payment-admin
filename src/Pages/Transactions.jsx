@@ -22,9 +22,9 @@ const formatDateTime = (dateString) => {
 const Transactions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
 
-  // Fetch all transactions across all accounts
+  // Fetch all transactions, optionally filtered by account number
   const {
     data: transactionsResponse,
     isLoading,
@@ -32,7 +32,7 @@ const Transactions = () => {
     error,
     refetch,
     isFetching
-  } = useAllTransactions(currentPage, pageSize, searchTerm);
+  } = useAllTransactions(currentPage, pageSize, accountNumber);
 
   const transactions = transactionsResponse?.data?.items || [];
   const pagination = transactionsResponse?.data || {};
@@ -42,9 +42,9 @@ const Transactions = () => {
     setCurrentPage(newPage);
   };
 
-  // Handle search
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
+  // Handle account number search
+  const handleAccountNumberChange = (e) => {
+    setAccountNumber(e.target.value);
     setCurrentPage(1); // Reset to first page when searching
   };
 
@@ -92,13 +92,13 @@ const Transactions = () => {
   return (
     <Layout 
       title="All Transactions" 
-      subtitle="View and search all transactions across all accounts"
+      subtitle="View all transactions with optional account filtering"
     >
       <div className="space-y-6">
         {/* Debug Info - Remove in production */}
         {process.env.NODE_ENV === 'development' && (
           <div className="bg-black text-white p-2 text-xs rounded">
-            Page: {currentPage} | Loading: {isLoading ? 'Yes' : 'No'} | Count: {transactions.length} | Search: "{searchTerm}"
+            Page: {currentPage} | Loading: {isLoading ? 'Yes' : 'No'} | Count: {transactions.length} | Filter: {accountNumber ? `"${accountNumber}"` : 'None (All Transactions)'}
           </div>
         )}
 
@@ -106,7 +106,9 @@ const Transactions = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">All Transactions</h1>
-            <p className="text-gray-600">Complete transaction history across all accounts</p>
+            <p className="text-gray-600">
+              {accountNumber ? `Showing transactions for account: ${accountNumber}` : 'View all transactions across all accounts'}
+            </p>
           </div>
           
           <button
@@ -118,23 +120,40 @@ const Transactions = () => {
           </button>
         </div>
 
-        {/* Search and Filters */}
+        {/* Filter by Account Number (Optional) */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex-1">
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
-                Search Transactions
-              </label>
-              <input
-                type="text"
-                id="search"
-                placeholder="Search by reference, description, account name..."
-                value={searchTerm}
-                onChange={handleSearch}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
+          <div className="max-w-md">
+            <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-700 mb-1">
+              Filter by Account Number (Optional)
+            </label>
+            <input
+              type="text"
+              id="accountNumber"
+              placeholder="Enter account number to filter (e.g., 9018323928)"
+              value={accountNumber}
+              onChange={handleAccountNumberChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Leave empty to view all transactions, or enter an account number to filter
+            </p>
           </div>
+
+          {/* Filter Status */}
+          {accountNumber && (
+            <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-between">
+              <p className="text-sm text-blue-700">
+                Filtering transactions for account: {accountNumber}
+                {transactions.length > 0 && ` (${pagination.totalCount || transactions.length} results found)`}
+              </p>
+              <button
+                onClick={() => setAccountNumber('')}
+                className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                Clear Filter
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Transactions Table */}
@@ -154,7 +173,7 @@ const Transactions = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Loading all transactions...
+                Loading transactions...
               </div>
             </div>
           )}
@@ -168,6 +187,7 @@ const Transactions = () => {
                 </svg>
               </div>
               <p className="text-gray-600 mb-4">Failed to load transactions</p>
+              <p className="text-sm text-gray-500 mb-4">{error?.message || 'Please try again'}</p>
               <button onClick={() => refetch()} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">Try Again</button>
             </div>
           )}
@@ -246,14 +266,18 @@ const Transactions = () => {
                   </svg>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Transactions Found</h3>
                   <p className="text-gray-500 mb-4">
-                    {searchTerm ? 'No transactions match your search criteria.' : 'No transactions available.'}
+                    {accountNumber ? (
+                      `No transactions found for account number: ${accountNumber}`
+                    ) : (
+                      'No transactions available at the moment.'
+                    )}
                   </p>
-                  {searchTerm && (
+                  {accountNumber && (
                     <button
-                      onClick={() => setSearchTerm('')}
+                      onClick={() => setAccountNumber('')}
                       className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
                     >
-                      Clear Search
+                      Clear Filter & View All Transactions
                     </button>
                   )}
                 </div>

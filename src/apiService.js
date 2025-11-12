@@ -3,7 +3,7 @@ import axios from 'axios';
 // Environment-based configuration
 const isDevelopment = import.meta.env.MODE === 'development';
 const BASE_URL = isDevelopment 
-  ? '/api/Admin' // Use proxy in development
+  ? 'https://treegar-accounts-api.treegar.com:8443/api/Admin' // Use proxy in development
   : 'https://treegar-accounts-api.treegar.com:8443/api/Admin'; // Direct API in production
 
 // API Key - directly declared here

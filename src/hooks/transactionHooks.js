@@ -18,9 +18,12 @@ export const useAccountTransactions = (accountId, pageNumber = 1, pageSize = 100
     queryFn: async () => {
       console.log('🔍 SINGLE API CALL - Fetching transactions for account ID:', accountId);
       
+      // API requires minimum pageSize of 100
+      const apiPageSize = Math.max(pageSize, 100);
+      
       const response = await apiService.get(`/accounts/${accountId}/transactions/paginated`, {
         pageNumber,
-        pageSize,
+        pageSize: apiPageSize,
       });
       
       console.log('📡 API Response received:', response);
@@ -60,104 +63,208 @@ export const useInvalidateTransactions = () => {
   };
 };
 
-export const useAllTransactions = (page = 1, pageSize = 20, searchTerm = '') => {
-    return useQuery({
-      queryKey: [TRANSACTIONS_QUERY_KEYS.TRANSACTIONS, 'all', page, pageSize, searchTerm],
-      queryFn: async () => {
-        console.log('🔍 Fetching all transactions - Page:', page, 'PageSize:', pageSize, 'Search:', searchTerm);
+// Updated useAllTransactions hook with optional account number filtering
+export const useAllTransactions = (page = 1, pageSize = 20, accountNumber = '') => {
+  return useQuery({
+    queryKey: [TRANSACTIONS_QUERY_KEYS.TRANSACTIONS, 'all', page, pageSize, accountNumber],
+    queryFn: async () => {
+      console.log('🔍 Fetching transactions - Page:', page, 'PageSize:', pageSize, 'Account:', accountNumber);
+      
+      // If account number is provided, search for that specific account
+      if (accountNumber && accountNumber.trim()) {
+        const trimmedAccountNumber = accountNumber.trim();
         
+        try {
+          // Search for account using the accounts endpoint
+          console.log('🔍 Searching for account number:', trimmedAccountNumber);
+          const accountSearchResponse = await apiService.get('/accounts', {
+            search: trimmedAccountNumber
+          });
+          
+          console.log('📡 Account search response:', accountSearchResponse);
+          
+          // Check if we found any accounts
+          const accounts = accountSearchResponse?.data?.items || accountSearchResponse?.data || [];
+          
+          if (!Array.isArray(accounts) || accounts.length === 0) {
+            console.log('❌ No accounts found for number:', trimmedAccountNumber);
+            return {
+              data: {
+                items: [],
+                totalCount: 0,
+                pageNumber: page,
+                pageSize: pageSize,
+                totalPages: 0,
+                hasPreviousPage: false,
+                hasNextPage: false
+              }
+            };
+          }
+          
+          // Find exact match for account number
+          const matchingAccount = accounts.find(acc => 
+            acc.accountNumber === trimmedAccountNumber || 
+            acc.accountNumber?.toString() === trimmedAccountNumber
+          );
+          
+          if (!matchingAccount) {
+            console.log('❌ No exact account match found for number:', trimmedAccountNumber);
+            return {
+              data: {
+                items: [],
+                totalCount: 0,
+                pageNumber: page,
+                pageSize: pageSize,
+                totalPages: 0,
+                hasPreviousPage: false,
+                hasNextPage: false
+              }
+            };
+          }
+          
+          console.log('✅ Found matching account:', matchingAccount);
+          
+          // Get account ID
+          const accountId = matchingAccount.accountId || matchingAccount.id;
+          
+          if (!accountId) {
+            console.log('❌ Account ID not found in account object');
+            return {
+              data: {
+                items: [],
+                totalCount: 0,
+                pageNumber: page,
+                pageSize: pageSize,
+                totalPages: 0,
+                hasPreviousPage: false,
+                hasNextPage: false
+              }
+            };
+          }
+          
+          // Since API requires minimum 100 pageSize for account transactions
+          const apiMinPageSize = 100;
+          const displayItemsPerPage = pageSize;
+          const startItem = (page - 1) * displayItemsPerPage;
+          const apiPage = Math.floor(startItem / apiMinPageSize) + 1;
+          
+          console.log(`🔍 Fetching API page ${apiPage} for display page ${page}`);
+          
+          // Fetch transactions for this account
+          const transactionsResponse = await apiService.get(`/accounts/${accountId}/transactions/paginated`, {
+            pageNumber: apiPage,
+            pageSize: apiMinPageSize,
+          });
+          
+          console.log('📡 Account transactions response:', transactionsResponse);
+          
+          if (!transactionsResponse?.data?.items) {
+            return {
+              data: {
+                items: [],
+                totalCount: 0,
+                pageNumber: page,
+                pageSize: pageSize,
+                totalPages: 0,
+                hasPreviousPage: false,
+                hasNextPage: false
+              }
+            };
+          }
+          
+          // Client-side pagination of the API results
+          const allItems = transactionsResponse.data.items;
+          const totalCount = transactionsResponse.data.totalCount || allItems.length;
+          
+          // Calculate the slice indices for our display page
+          const localStartIndex = startItem % apiMinPageSize;
+          const localEndIndex = Math.min(localStartIndex + displayItemsPerPage, allItems.length);
+          
+          const paginatedItems = allItems.slice(localStartIndex, localEndIndex);
+          
+          // If we don't have enough items on this page, we might need the next API page
+          let finalItems = paginatedItems;
+          if (paginatedItems.length < displayItemsPerPage && 
+              transactionsResponse.data.hasNextPage && 
+              localEndIndex === allItems.length) {
+            
+            try {
+              const nextApiResponse = await apiService.get(`/accounts/${accountId}/transactions/paginated`, {
+                pageNumber: apiPage + 1,
+                pageSize: apiMinPageSize,
+              });
+              
+              const nextItems = nextApiResponse?.data?.items || [];
+              const remainingNeeded = displayItemsPerPage - paginatedItems.length;
+              const additionalItems = nextItems.slice(0, remainingNeeded);
+              
+              finalItems = [...paginatedItems, ...additionalItems];
+            } catch (nextPageError) {
+              console.warn('Could not fetch next page for complete results:', nextPageError);
+            }
+          }
+          
+          // Calculate pagination metadata
+          const totalDisplayPages = Math.ceil(totalCount / displayItemsPerPage);
+          
+          return {
+            data: {
+              items: finalItems,
+              totalCount: totalCount,
+              pageNumber: page,
+              pageSize: displayItemsPerPage,
+              totalPages: totalDisplayPages,
+              hasPreviousPage: page > 1,
+              hasNextPage: page < totalDisplayPages
+            }
+          };
+          
+        } catch (error) {
+          console.error('❌ Error searching for account transactions:', error);
+          throw new Error(`Failed to search for account number: ${trimmedAccountNumber}`);
+        }
+      } else {
+        // No account number - fetch all transactions
         const params = {
           page,
           pageSize,
         };
         
-        // Add search term if provided
-        if (searchTerm && searchTerm.trim()) {
-          params.search = searchTerm.trim();
-        }
-        
         const response = await apiService.get('/transactions', params);
-        
         console.log('📡 All transactions API response:', response);
         return response;
-      },
-      enabled: true,
-      staleTime: 2 * 60 * 1000, // 2 minutes
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-    });
-  };
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+      }
+    },
+    enabled: true,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: (failureCount, error) => {
+      // Don't retry if it's an account not found error
+      if (error?.message?.includes('Failed to search for account number')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+  });
+};
+
+// New hook specifically for searching accounts by account number
+export const useAccountSearch = (accountNumber) => {
+  return useQuery({
+    queryKey: ['accounts', 'search', accountNumber],
+    queryFn: async () => {
+      console.log('🔍 Searching accounts for number:', accountNumber);
+      
+      const response = await apiService.get('/accounts', {
+        search: accountNumber
+      });
+      
+      console.log('📡 Account search API response:', response);
+      return response;
+    },
+    enabled: !!accountNumber && accountNumber.trim().length > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
+};
