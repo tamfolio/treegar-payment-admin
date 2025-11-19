@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./Pages/Login";
-import OTP from "./Pages/OTP";
+import OTP from "./Pages/Otp";
 import Dashboard from "./Pages/Dashboard";
 import AccountDetails from "./Pages/AccountDetails";
 import Transactions from "./Pages/Transactions";
