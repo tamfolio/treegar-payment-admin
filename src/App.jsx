@@ -18,7 +18,7 @@ import Users from "./Pages/Users";
 import Companies from "./Pages/Companies";
 import RolesPermissions from "./Pages/RolesPermissions";
 import UserDetails from "./Pages/UserDetails";
-import CompanyDetails from "./Pages/CompanyDetails ";
+import CompanyDetails from "./Pages/CompanyDetails";
 import CompanyTransactions from "./Pages/CompanyTransactions";
 
 // Create a client
