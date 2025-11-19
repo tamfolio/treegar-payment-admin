@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useApprovePayout, useRejectPayout } from '../hooks/companyHooks';
+import { useApprovePayout, useRejectPayout } from '../hooks/companyhooks';
 
 const PayoutActionModal = ({ 
   isOpen, 

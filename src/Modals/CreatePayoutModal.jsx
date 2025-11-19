@@ -7,7 +7,7 @@ import {
   formatCompanyOptions,
   validateAccountNumber,
   validateAmount
-} from '../hooks/companyHooks';
+} from '../hooks/companyhooks';
 
 const CreatePayoutModal = ({ isOpen, onClose, onSuccess }) => {
   // Form state

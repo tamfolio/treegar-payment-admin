@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useOnboardCompany } from '../hooks/companyHooks';
+import { useOnboardCompany } from '../hooks/companyhooks';
 
 const OnboardCompanyModal = ({ isOpen, onClose, onSuccess }) => {
   // Form state
