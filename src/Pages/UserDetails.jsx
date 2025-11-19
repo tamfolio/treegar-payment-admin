@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { useUserDetails } from '../hooks/companyHooks';
+import { useUserDetails } from '../hooks/companyhooks';
 
 const UserDetails = () => {
   const { id } = useParams();
