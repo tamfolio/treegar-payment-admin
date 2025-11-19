@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import Layout from '../components/Layout';
-import { useAdminUsers } from '../hooks/companyHooks';
+import { useAdminUsers } from '../hooks/companyhooks';
 import { useNavigate } from 'react-router-dom';
 
 const Users = () => {
