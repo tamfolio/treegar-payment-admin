@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import Layout from '../components/Layout';
-import { useRoles, usePermissions } from '../hooks/companyHooks';
+import { useRoles, usePermissions } from '../hooks/companyhooks';
 
 const RolesPermissions = () => {
   const [activeTab, setActiveTab] = useState('roles'); // 'roles' or 'permissions'

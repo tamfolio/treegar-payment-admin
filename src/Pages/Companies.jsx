@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import Layout from '../components/Layout';
 import OnboardCompanyModal from '../Modals/OnboardCompaniesModal';
-import { useCompaniesList } from '../hooks/companyHooks';
+import { useCompaniesList } from '../hooks/companyhooks';
 import { useNavigate } from 'react-router-dom';
 
 const Companies = () => {

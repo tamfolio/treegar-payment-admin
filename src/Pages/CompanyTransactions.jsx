@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCompanyTransactions } from '../hooks/transactionHooks';
-import { useCompanyDetails } from '../hooks/companyHooks';
+import { useCompanyDetails } from '../hooks/companyhooks';
 import Layout from '../components/Layout';
 
 const formatCurrency = (amount) => {
