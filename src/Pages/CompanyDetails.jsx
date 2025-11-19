@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { useCompanyDetails } from '../hooks/companyHooks';
+import { useCompanyDetails } from '../hooks/companyhooks';
 import { useCompanyTransactions } from '../hooks/transactionHooks';
 
 const CompanyDetails = () => {
