@@ -5,6 +5,64 @@ import apiService from '../apiService';
 export const TRANSACTIONS_QUERY_KEYS = {
   TRANSACTIONS: 'transactions',
   ACCOUNT_TRANSACTIONS: 'accountTransactions',
+  COMPANY_TRANSACTIONS: 'companyTransactions',
+};
+
+// ============================================================================
+// COMPANY TRANSACTIONS QUERY
+// ============================================================================
+
+export const useCompanyTransactions = (companyId, page = 1, pageSize = 20, options = {}) => {
+  return useQuery({
+    queryKey: [TRANSACTIONS_QUERY_KEYS.COMPANY_TRANSACTIONS, companyId, page, pageSize],
+    queryFn: async () => {
+      console.log('🏢 COMPANY TRANSACTIONS API CALL - Starting:', {
+        companyId,
+        companyIdType: typeof companyId,
+        parsedCompanyId: parseInt(companyId, 10),
+        page,
+        pageSize,
+        endpoint: `/Admin/transactions`
+      });
+      
+      // Validate companyId
+      if (!companyId) {
+        console.error('❌ Company ID is required but not provided');
+        throw new Error('Company ID is required');
+      }
+
+      const parsedCompanyId = parseInt(companyId, 10);
+      if (isNaN(parsedCompanyId) || parsedCompanyId <= 0) {
+        console.error('❌ Invalid company ID:', companyId);
+        throw new Error(`Invalid company ID: ${companyId}`);
+      }
+      
+      // Use the correct API endpoint without /Admin prefix (if apiService already includes it)
+      const response = await apiService.get(`/transactions`, {
+        page,
+        pageSize,
+        CompanyId: parsedCompanyId  // Note: Uppercase 'C' to match your API
+      });
+      
+      console.log('📡 Company transactions API response:', response);
+      return response;
+    },
+    enabled: !!companyId && !isNaN(parseInt(companyId, 10)) && parseInt(companyId, 10) > 0,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: (failureCount, error) => {
+      console.log('🔄 Retry attempt:', { failureCount, error: error?.message });
+      return failureCount < 2;
+    },
+    onError: (error) => {
+      console.error('❌ useCompanyTransactions error:', error);
+    },
+    onSuccess: (data) => {
+      console.log('✅ useCompanyTransactions success:', data);
+    },
+    ...options,
+  });
 };
 
 // ============================================================================
@@ -58,6 +116,12 @@ export const useInvalidateTransactions = () => {
       console.log('🗑️ Removing transactions cache for account:', accountId);
       queryClient.removeQueries({ 
         queryKey: [TRANSACTIONS_QUERY_KEYS.ACCOUNT_TRANSACTIONS, accountId] 
+      });
+    },
+    invalidateCompanyTransactions: (companyId) => {
+      console.log('🗑️ Invalidating company transactions for company:', companyId);
+      queryClient.invalidateQueries({ 
+        queryKey: [TRANSACTIONS_QUERY_KEYS.COMPANY_TRANSACTIONS, companyId] 
       });
     }
   };

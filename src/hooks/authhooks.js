@@ -8,7 +8,7 @@ export const AUTH_QUERY_KEYS = {
 };
 
 // ============================================================================
-// LOGIN MUTATION
+// LOGIN MUTATION (Updated to handle 2FA)
 // ============================================================================
 
 export const useLogin = () => {
@@ -34,6 +34,15 @@ export const useLogin = () => {
       if (response.success && response.data) {
         const { data } = response;
         
+        // Check if 2FA is required
+        if (data.requiresTwoFactor) {
+          console.log('🔐 Two-factor authentication required');
+          // Don't store token yet, wait for OTP verification
+          // Return the response so the component can handle 2FA flow
+          return response;
+        }
+        
+        // Handle regular login (no 2FA)
         // Extract token
         const token = data.token;
         
@@ -97,6 +106,136 @@ export const useLogin = () => {
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       localStorage.removeItem('tokenExpiresAt');
+    },
+  });
+};
+
+// ============================================================================
+// OTP VERIFICATION MUTATION
+// ============================================================================
+
+export const useVerifyOTP = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ twoFactorChallengeId, code, emailAddress }) => {
+      console.log('🔐 OTP verification attempt for:', emailAddress);
+      
+      // Make OTP verification request to your API
+      const response = await apiService.post('/login/otp/verify', {
+        emailAddress: emailAddress,
+        otpCode: code,
+        challengeId: twoFactorChallengeId,
+      });
+      
+      console.log('📡 OTP verification API response:', response);
+      return response;
+    },
+    onSuccess: (response) => {
+      console.log('✅ OTP verification success:', response);
+      
+      // Handle Treegar API response structure
+      if (response.success && response.data) {
+        const { data } = response;
+        
+        // Extract token
+        const token = data.token;
+        
+        // Extract user data
+        const userData = {
+          id: data.id,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.emailAddress,
+          emailAddress: data.emailAddress,
+          mobileNumber: data.mobileNumber,
+          referalCode: data.referalCode,
+          avatar: data.avatar,
+          status: data.status,
+          roleId: data.roleId,
+          departmentId: data.departmentId,
+          createdAt: data.createdAt,
+          // Add computed fields
+          name: `${data.firstName} ${data.lastName}`,
+          role: data.roleId === 0 ? 'Admin' : 'User',
+        };
+
+        console.log('📦 Extracted OTP verification data:', { 
+          token: token?.substring(0, 20) + '...', 
+          userData 
+        });
+
+        // Store auth token
+        if (token) {
+          localStorage.setItem('authToken', token);
+          console.log('💾 OTP Token stored successfully');
+        } else {
+          console.error('❌ No token found in OTP verification response');
+          throw new Error('No authentication token received');
+        }
+
+        // Store user data
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        // Set user data in React Query cache
+        queryClient.setQueryData([AUTH_QUERY_KEYS.USER], userData);
+        
+        console.log('👤 OTP User data stored:', userData);
+
+        // Store token expiration info
+        if (data.expiresAt) {
+          localStorage.setItem('tokenExpiresAt', data.expiresAt);
+        }
+
+        // Invalidate all queries to refetch with new auth
+        queryClient.invalidateQueries();
+        
+        console.log('🎉 OTP verification completed successfully');
+        
+        return { token, user: userData, response };
+      } else {
+        console.error('❌ Invalid OTP verification response structure:', response);
+        throw new Error(response.message || 'OTP verification failed');
+      }
+    },
+    onError: (error) => {
+      console.error('❌ OTP verification failed:', error);
+      // Don't clear auth data on OTP failure, user might retry
+    },
+  });
+};
+
+// ============================================================================
+// RESEND OTP MUTATION (calls the same login endpoint)
+// ============================================================================
+
+export const useResendOTP = () => {
+  return useMutation({
+    mutationFn: async ({ emailAddress, password }) => {
+      console.log('📨 Resending OTP by calling login again for:', emailAddress);
+      
+      // Call the same login endpoint to trigger a new OTP
+      const response = await apiService.post('/login', {
+        emailAddress: emailAddress,
+        password: password,
+      });
+      
+      console.log('📡 Resend OTP (login) API response:', response);
+      return response;
+    },
+    onSuccess: (response) => {
+      console.log('✅ OTP resent successfully via login call:', response);
+      
+      if (response.success && response.data.requiresTwoFactor) {
+        console.log('📧 New OTP code sent');
+        return response;
+      } else {
+        console.error('❌ Unexpected response when resending OTP:', response);
+        throw new Error(response.message || 'Failed to resend OTP');
+      }
+    },
+    onError: (error) => {
+      console.error('❌ Resend OTP failed:', error);
     },
   });
 };

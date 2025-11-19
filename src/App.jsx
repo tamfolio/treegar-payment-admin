@@ -9,9 +9,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./Pages/Login";
+import OTP from "./Pages/OTP";
 import Dashboard from "./Pages/Dashboard";
 import AccountDetails from "./Pages/AccountDetails";
 import Transactions from "./Pages/Transactions";
+import Payouts from "./Pages/Payouts";
+import Users from "./Pages/Users";
+import Companies from "./Pages/Companies";
+import RolesPermissions from "./Pages/RolesPermissions";
+import UserDetails from "./Pages/UserDetails";
+import CompanyDetails from "./Pages/CompanyDetails ";
+import CompanyTransactions from "./Pages/CompanyTransactions";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -40,13 +48,31 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
+// OTP Route Protection - allows access only when coming from login with 2FA data
+const OTPRoute = ({ children }) => {
+  // Check if we have OTP data in sessionStorage (temporary storage for OTP flow)
+  const otpData = sessionStorage.getItem("otpData");
+  const hasOTPData = !!otpData;
+
+  return hasOTPData ? children : <Navigate to="/login" replace />;
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
           <Routes>
+            <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
+            <Route
+              path="/otp"
+              element={
+                <OTPRoute>
+                  <OTP />
+                </OTPRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={
@@ -64,6 +90,38 @@ function App() {
               }
             />
             <Route
+              path="/payouts"
+              element={
+                <ProtectedRoute>
+                  <Payouts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <Users />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/companies"
+              element={
+                <ProtectedRoute>
+                  <Companies />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/roles-permissions"
+              element={
+                <ProtectedRoute>
+                  <RolesPermissions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/dashboard/:id"
               element={
                 <ProtectedRoute>
@@ -71,8 +129,32 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route
+              path="/company-transactions/:id"
+              element={
+                <ProtectedRoute>
+                  <CompanyTransactions />
+                </ProtectedRoute>
+              }
+            />
+              <Route
+              path="/users/:id"
+              element={
+                <ProtectedRoute>
+                  <UserDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/companies/:id"
+              element={
+                <ProtectedRoute>
+                  <CompanyDetails />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
+          
         </Router>
       </AuthProvider>
 

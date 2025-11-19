@@ -28,10 +28,30 @@ const Login = () => {
     loginMutation.mutate(
       { email, password },
       {
-        onSuccess: (data) => {
-          console.log('✅ Login successful, navigating to dashboard...');
-          // Navigate to dashboard immediately
-          navigate('/dashboard', { replace: true });
+        onSuccess: (response) => {
+          console.log('✅ Login response:', response);
+          
+          // Check if 2FA is required
+          if (response.data.requiresTwoFactor) {
+            console.log('🔐 Two-factor authentication required');
+            
+            // Store OTP data in sessionStorage for the OTP page
+            const otpData = {
+              userEmail: response.data.emailAddress,
+              userPassword: password, // Store password for resend functionality
+              twoFactorChallengeId: response.data.twoFactorChallengeId,
+              deliveryChannel: response.data.twoFactorDeliveryChannel,
+              expiresAt: response.data.twoFactorExpiresAt
+            };
+            sessionStorage.setItem('otpData', JSON.stringify(otpData));
+            
+            // Navigate to OTP page
+            navigate('/otp', { replace: true });
+          } else {
+            // Direct login success - navigate to dashboard
+            console.log('✅ Login successful, navigating to dashboard...');
+            navigate('/dashboard', { replace: true });
+          }
         },
         onError: (error) => {
           console.error('❌ Login error:', error);
@@ -89,7 +109,7 @@ const Login = () => {
             {/* Success Message */}
             {loginMutation.isSuccess && (
               <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-                ✅ Login successful! Redirecting to dashboard...
+                ✅ Login successful! {loginMutation.data?.data?.requiresTwoFactor ? 'Redirecting to verification...' : 'Redirecting to dashboard...'}
               </div>
             )}
 
