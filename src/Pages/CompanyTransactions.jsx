@@ -28,13 +28,27 @@ const CompanyTransactions = () => {
   
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    accountNumber: '',
+    reference: ''
+  });
+  
+  // Active filters (applied when user clicks search)
+  const [activeFilters, setActiveFilters] = useState({
+    accountNumber: '',
+    reference: ''
+  });
 
   console.log('🔍 CompanyTransactions - Component render:', {
     companyId,
     companyIdType: typeof companyId,
     parsedCompanyId: parseInt(companyId, 10),
     currentPage,
-    pageSize
+    pageSize,
+    filters,
+    activeFilters
   });
 
   // Get company info from navigation state or fetch it
@@ -50,7 +64,7 @@ const CompanyTransactions = () => {
     finalCompany: company
   });
 
-  // Fetch company transactions
+  // Fetch company transactions with filters
   const {
     data: transactionsResponse,
     isLoading,
@@ -58,12 +72,13 @@ const CompanyTransactions = () => {
     error,
     refetch,
     isFetching
-  } = useCompanyTransactions(companyId, currentPage, pageSize);
+  } = useCompanyTransactions(companyId, currentPage, pageSize, activeFilters);
 
   console.log('📊 Company Transactions API state:', {
     companyId,
     currentPage,
     pageSize,
+    activeFilters,
     isLoading,
     isError,
     error: error?.message,
@@ -80,6 +95,27 @@ const CompanyTransactions = () => {
     hasTransactions,
     pagination
   });
+
+  // Handle filter changes
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Apply filters
+  const handleApplyFilters = () => {
+    setActiveFilters({ ...filters });
+    setCurrentPage(1); // Reset to first page when applying filters
+  };
+
+  // Clear filters
+  const handleClearFilters = () => {
+    setFilters({ accountNumber: '', reference: '' });
+    setActiveFilters({ accountNumber: '', reference: '' });
+    setCurrentPage(1);
+  };
 
   // Handle pagination
   const handlePageChange = (newPage) => {
@@ -110,6 +146,9 @@ const CompanyTransactions = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // Check if filters are active
+  const hasActiveFilters = activeFilters.accountNumber || activeFilters.reference;
 
   // Pagination component
   const Pagination = () => {
@@ -145,6 +184,7 @@ const CompanyTransactions = () => {
             <div>Company ID: {companyId} | Loading: {isLoading ? 'Yes' : 'No'} | Count: {transactions.length}</div>
             <div>API Error: {error ? error.message : 'None'}</div>
             <div>Is Fetching: {isFetching ? 'Yes' : 'No'}</div>
+            <div>Active Filters: {JSON.stringify(activeFilters)}</div>
           </div>
         )}
 
@@ -220,12 +260,84 @@ const CompanyTransactions = () => {
           </div>
         )}
 
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Filter Transactions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Account Number Filter */}
+            <div>
+              <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                Account Number
+              </label>
+              <input
+                type="text"
+                id="accountNumber"
+                value={filters.accountNumber}
+                onChange={(e) => handleFilterChange('accountNumber', e.target.value)}
+                placeholder="Enter account number..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+
+            {/* Reference Filter */}
+            <div>
+              <label htmlFor="reference" className="block text-sm font-medium text-gray-700 mb-1">
+                Reference
+              </label>
+              <input
+                type="text"
+                id="reference"
+                value={filters.reference}
+                onChange={(e) => handleFilterChange('reference', e.target.value)}
+                placeholder="Enter reference..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-end space-x-2">
+              <button
+                onClick={handleApplyFilters}
+                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors text-sm"
+              >
+                Apply Filters
+              </button>
+              {hasActiveFilters && (
+                <button
+                  onClick={handleClearFilters}
+                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors text-sm"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Active Filters Display */}
+          {hasActiveFilters && (
+            <div className="mt-4 flex items-center space-x-2">
+              <span className="text-sm text-gray-500">Active filters:</span>
+              {activeFilters.accountNumber && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  Account: {activeFilters.accountNumber}
+                </span>
+              )}
+              {activeFilters.reference && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  Reference: {activeFilters.reference}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Transactions Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Transaction History</h2>
             <p className="text-sm text-gray-600">
               {isLoading ? 'Loading transactions...' : `${pagination.totalCount || 0} transactions found`}
+              {hasActiveFilters && ' (filtered)'}
             </p>
           </div>
           
@@ -267,6 +379,7 @@ const CompanyTransactions = () => {
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Number</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
@@ -286,6 +399,11 @@ const CompanyTransactions = () => {
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTransactionTypeBadge(transaction.type || transaction.transactionType)}`}>
                                   {transaction.type || transaction.transactionType || 'Transaction'}
                                 </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-mono text-gray-900">
+                                  {transaction.accountNumber || 'N/A'}
+                                </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm font-semibold text-gray-900">
@@ -320,9 +438,24 @@ const CompanyTransactions = () => {
                   <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Available Transactions</h3>
-                  <p className="text-gray-500 mb-4">This company currently has no transaction history.</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {hasActiveFilters ? 'No Matching Transactions' : 'No Available Transactions'}
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    {hasActiveFilters 
+                      ? 'No transactions match your current filters. Try adjusting your search criteria.'
+                      : 'This company currently has no transaction history.'
+                    }
+                  </p>
                   <div className="flex justify-center space-x-4">
+                    {hasActiveFilters && (
+                      <button 
+                        onClick={handleClearFilters} 
+                        className="px-4 py-2 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
                     <button onClick={() => refetch()} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors">Refresh</button>
                     <button onClick={handleBackToCompany} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">Back to Company</button>
                   </div>

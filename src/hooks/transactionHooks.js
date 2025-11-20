@@ -9,12 +9,14 @@ export const TRANSACTIONS_QUERY_KEYS = {
 };
 
 // ============================================================================
-// COMPANY TRANSACTIONS QUERY
+// COMPANY TRANSACTIONS QUERY WITH FILTERS
 // ============================================================================
 
-export const useCompanyTransactions = (companyId, page = 1, pageSize = 20, options = {}) => {
+export const useCompanyTransactions = (companyId, page = 1, pageSize = 20, filters = {}, options = {}) => {
+  const { accountNumber, reference } = filters;
+  
   return useQuery({
-    queryKey: [TRANSACTIONS_QUERY_KEYS.COMPANY_TRANSACTIONS, companyId, page, pageSize],
+    queryKey: [TRANSACTIONS_QUERY_KEYS.COMPANY_TRANSACTIONS, companyId, page, pageSize, accountNumber, reference],
     queryFn: async () => {
       console.log('🏢 COMPANY TRANSACTIONS API CALL - Starting:', {
         companyId,
@@ -22,7 +24,8 @@ export const useCompanyTransactions = (companyId, page = 1, pageSize = 20, optio
         parsedCompanyId: parseInt(companyId, 10),
         page,
         pageSize,
-        endpoint: `/Admin/transactions`
+        filters: { accountNumber, reference },
+        endpoint: `/transactions`
       });
       
       // Validate companyId
@@ -37,12 +40,26 @@ export const useCompanyTransactions = (companyId, page = 1, pageSize = 20, optio
         throw new Error(`Invalid company ID: ${companyId}`);
       }
       
-      // Use the correct API endpoint without /Admin prefix (if apiService already includes it)
-      const response = await apiService.get(`/transactions`, {
+      // Build query parameters
+      const queryParams = {
         page,
         pageSize,
         CompanyId: parsedCompanyId  // Note: Uppercase 'C' to match your API
-      });
+      };
+
+      // Add filters if provided
+      if (accountNumber && accountNumber.trim()) {
+        queryParams.search = accountNumber.trim();  // Changed from AccountNumber to search
+      }
+
+      if (reference && reference.trim()) {
+        queryParams.TransactionReference = reference.trim();  // Changed from Reference to TransactionReference
+      }
+      
+      console.log('📡 API Query params:', queryParams);
+      
+      // Use the correct API endpoint
+      const response = await apiService.get(`/transactions`, queryParams);
       
       console.log('📡 Company transactions API response:', response);
       return response;
@@ -118,8 +135,8 @@ export const useInvalidateTransactions = () => {
         queryKey: [TRANSACTIONS_QUERY_KEYS.ACCOUNT_TRANSACTIONS, accountId] 
       });
     },
-    invalidateCompanyTransactions: (companyId) => {
-      console.log('🗑️ Invalidating company transactions for company:', companyId);
+    invalidateCompanyTransactions: (companyId, filters) => {
+      console.log('🗑️ Invalidating company transactions for company:', companyId, 'with filters:', filters);
       queryClient.invalidateQueries({ 
         queryKey: [TRANSACTIONS_QUERY_KEYS.COMPANY_TRANSACTIONS, companyId] 
       });

@@ -17,6 +17,16 @@ const OnboardCompanyModal = ({ isOpen, onClose, onSuccess }) => {
   // API hook
   const onboardCompanyMutation = useOnboardCompany();
 
+  // Generate random external reference with TREEGAR- prefix
+  const generateExternalReference = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = 'TREEGAR-';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
   // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
@@ -28,6 +38,14 @@ const OnboardCompanyModal = ({ isOpen, onClose, onSuccess }) => {
       setErrors({});
       setShowResult(false);
       setResultData(null);
+    }
+  }, [isOpen]);
+
+  // Auto-generate external reference when modal opens
+  useEffect(() => {
+    if (isOpen && !formData.externalReference) {
+      const newReference = generateExternalReference();
+      setFormData(prev => ({ ...prev, externalReference: newReference }));
     }
   }, [isOpen]);
 
@@ -59,8 +77,10 @@ const OnboardCompanyModal = ({ isOpen, onClose, onSuccess }) => {
 
     if (!formData.externalReference.trim()) {
       newErrors.externalReference = 'External reference is required';
-    } else if (formData.externalReference.trim().length < 3) {
-      newErrors.externalReference = 'External reference must be at least 3 characters';
+    } else if (!formData.externalReference.startsWith('TREEGAR-')) {
+      newErrors.externalReference = 'External reference must start with TREEGAR-';
+    } else if (formData.externalReference.trim().length < 16) {
+      newErrors.externalReference = 'External reference must be at least 16 characters';
     }
 
     setErrors(newErrors);
@@ -140,6 +160,7 @@ const OnboardCompanyModal = ({ isOpen, onClose, onSuccess }) => {
                       <p><span className="font-medium">ID:</span> #{resultData.data.id}</p>
                       <p><span className="font-medium">Name:</span> {resultData.data.name}</p>
                       <p><span className="font-medium">Code:</span> {resultData.data.companyCode}</p>
+                      <p><span className="font-medium">Reference:</span> {resultData.data.externalReference}</p>
                       <p><span className="font-medium">Status:</span> 
                         <span className={`ml-1 px-2 py-1 rounded-full text-xs font-semibold ${
                           resultData.data.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
@@ -236,19 +257,30 @@ const OnboardCompanyModal = ({ isOpen, onClose, onSuccess }) => {
           {/* External Reference */}
           <div>
             <label htmlFor="externalReference" className="block text-sm font-medium text-gray-700 mb-1">
-              External Reference *
+              External Reference (Auto-generated)
             </label>
-            <input
-              type="text"
-              id="externalReference"
-              value={formData.externalReference}
-              onChange={(e) => handleInputChange('externalReference', e.target.value)}
-              disabled={onboardCompanyMutation.isPending}
-              placeholder="Enter external reference"
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                errors.externalReference ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                id="externalReference"
+                value={formData.externalReference}
+                readOnly
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 focus:outline-none"
+                placeholder="Will be auto-generated"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const newReference = generateExternalReference();
+                  setFormData(prev => ({ ...prev, externalReference: newReference }));
+                }}
+                disabled={onboardCompanyMutation.isPending}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                🔄
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Click 🔄 to generate a new reference</p>
             {errors.externalReference && <p className="text-red-500 text-xs mt-1">{errors.externalReference}</p>}
           </div>
 

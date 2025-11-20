@@ -1,18 +1,497 @@
 import React, { useState, useMemo } from 'react';
 import Layout from '../components/Layout';
-import { useAdminUsers } from '../hooks/companyhooks';
+import { useAdminUsers } from '../hooks/companyhooks.js';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import apiService from '../apiService';
+
+// Success/Failure Modal Component
+const ResultModal = ({ isOpen, onClose, type, message, details }) => {
+  if (!isOpen) return null;
+
+  const isSuccess = type === 'success';
+  
+  return (
+    <div className="fixed inset-0 bg-gray-600/50 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="mt-3 text-center">
+          {/* Icon */}
+          <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full ${
+            isSuccess ? 'bg-green-100' : 'bg-red-100'
+          }`}>
+            {isSuccess ? (
+              <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+          </div>
+          
+          {/* Title */}
+          <h3 className={`text-lg leading-6 font-medium mt-4 ${
+            isSuccess ? 'text-gray-900' : 'text-red-900'
+          }`}>
+            {isSuccess ? 'Success!' : 'Error'}
+          </h3>
+          
+          {/* Message */}
+          <div className="mt-2 px-7 py-3">
+            <p className="text-sm text-gray-500">{message}</p>
+            {details && (
+              <p className="text-xs text-gray-400 mt-2">{details}</p>
+            )}
+          </div>
+          
+          {/* Close Button */}
+          <div className="items-center px-4 py-3">
+            <button
+              onClick={onClose}
+              className={`px-4 py-2 text-base font-medium rounded-md w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                isSuccess
+                  ? 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+                  : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
+              }`}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Create User Modal Component
+const CreateUserModal = ({ isOpen, onClose, onSuccess, onError }) => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    emailAddress: '',
+    mobileNumber: '',
+    referalCode: '',
+    password: '',
+    avatar: '',
+    roleId: '',
+    departmentId: 0
+  });
+  const [errors, setErrors] = useState({});
+
+  const queryClient = useQueryClient();
+
+  // Generate random referral code
+  const generateReferralCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  // Auto-generate referral code when modal opens
+  React.useEffect(() => {
+    if (isOpen && !formData.referalCode) {
+      const newReferralCode = generateReferralCode();
+      setFormData(prev => ({ ...prev, referalCode: newReferralCode }));
+    }
+  }, [isOpen]);
+
+  // Fetch roles for the dropdown
+  const { data: rolesResponse } = useQuery({
+    queryKey: ['roles'],
+    queryFn: async () => {
+      console.log('🔍 Fetching roles for user creation...');
+      const response = await apiService.get('/roles');
+      console.log('📡 Roles response:', response);
+      return response;
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  const availableRoles = rolesResponse?.data || [];
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (userData) => {
+      console.log('🔄 Creating user:', userData);
+      
+      // Prepare the data with proper structure
+      const payload = {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        emailAddress: userData.emailAddress,
+        mobileNumber: userData.mobileNumber,
+        referalCode: userData.referalCode || '',
+        password: userData.password,
+        avatar: userData.avatar || '',
+        roleId: parseInt(userData.roleId) || 0,
+        departmentId: 0
+      };
+      
+      console.log('📡 API payload:', payload);
+      const response = await apiService.post('/setup', payload);
+      console.log('✅ User created successfully:', response);
+      return response;
+    },
+    onSuccess: (data) => {
+      console.log('✅ Create user success:', data);
+      // Invalidate and refetch users list
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      // Reset form
+      setFormData({
+        firstName: '',
+        lastName: '',
+        emailAddress: '',
+        mobileNumber: '',
+        referalCode: '',
+        password: '',
+        avatar: '',
+        roleId: '',
+        departmentId: 0
+      });
+      setErrors({});
+      onClose();
+      
+      // Show success modal
+      onSuccess('User created successfully!', `${data?.data?.firstName || 'New user'} has been added to the system.`);
+    },
+    onError: (error) => {
+      console.error('❌ Create user error:', error);
+      
+      // Handle validation errors from API
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      } else {
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to create user';
+        setErrors({ general: errorMessage });
+        
+        // Show error modal for non-validation errors
+        if (!error.response?.data?.errors) {
+          onError('Failed to create user', errorMessage);
+        }
+      }
+    }
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Basic validation
+    const newErrors = {};
+    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
+    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
+    if (!formData.emailAddress.trim()) newErrors.emailAddress = 'Email address is required';
+    if (!formData.mobileNumber.trim()) newErrors.mobileNumber = 'Mobile number is required';
+    if (!formData.password.trim()) newErrors.password = 'Password is required';
+    if (formData.password && formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    if (!formData.roleId) newErrors.roleId = 'Role is required';
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    createUserMutation.mutate(formData);
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleClose = () => {
+    if (!createUserMutation.isPending) {
+      setFormData({
+        firstName: '',
+        lastName: '',
+        emailAddress: '',
+        mobileNumber: '',
+        referalCode: '',
+        password: '',
+        avatar: '',
+        roleId: '',
+        roleIds: [],
+        departmentId: 0
+      });
+      setErrors({});
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+        <div className="mt-3">
+          {/* Modal Header */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Create New Admin User</h3>
+            <button
+              onClick={handleClose}
+              disabled={createUserMutation.isPending}
+              className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* General Error */}
+          {errors.general && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{errors.general}</p>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4 max-h-96 overflow-y-auto">
+            {/* Name Fields Row */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* First Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.firstName}
+                  onChange={(e) => handleChange('firstName', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                    errors.firstName ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="First name"
+                  disabled={createUserMutation.isPending}
+                />
+                {errors.firstName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+                )}
+              </div>
+
+              {/* Last Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.lastName}
+                  onChange={(e) => handleChange('lastName', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                    errors.lastName ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Last name"
+                  disabled={createUserMutation.isPending}
+                />
+                {errors.lastName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Email Address */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address *
+              </label>
+              <input
+                type="email"
+                value={formData.emailAddress}
+                onChange={(e) => handleChange('emailAddress', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.emailAddress ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="user@example.com"
+                disabled={createUserMutation.isPending}
+              />
+              {errors.emailAddress && (
+                <p className="mt-1 text-sm text-red-600">{errors.emailAddress}</p>
+              )}
+            </div>
+
+            {/* Mobile Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mobile Number *
+              </label>
+              <input
+                type="tel"
+                value={formData.mobileNumber}
+                onChange={(e) => handleChange('mobileNumber', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.mobileNumber ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="+234xxxxxxxxxx"
+                disabled={createUserMutation.isPending}
+              />
+              {errors.mobileNumber && (
+                <p className="mt-1 text-sm text-red-600">{errors.mobileNumber}</p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password *
+              </label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => handleChange('password', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.password ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="Minimum 6 characters"
+                disabled={createUserMutation.isPending}
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+              )}
+            </div>
+
+            {/* Role Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Role *
+              </label>
+              <select
+                value={formData.roleId}
+                onChange={(e) => handleChange('roleId', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                  errors.roleId ? 'border-red-300' : 'border-gray-300'
+                }`}
+                disabled={createUserMutation.isPending}
+              >
+                <option value="">Select a role...</option>
+                {availableRoles.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+              {errors.roleId && (
+                <p className="mt-1 text-sm text-red-600">{errors.roleId}</p>
+              )}
+            </div>
+
+            {/* Referral Code (Auto-generated) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Referral Code (Auto-generated)
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={formData.referalCode}
+                  readOnly
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 focus:outline-none"
+                  placeholder="Will be auto-generated"
+                  disabled={createUserMutation.isPending}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newCode = generateReferralCode();
+                    setFormData(prev => ({ ...prev, referalCode: newCode }));
+                  }}
+                  disabled={createUserMutation.isPending}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  🔄
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Click 🔄 to generate a new code</p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={createUserMutation.isPending}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={createUserMutation.isPending}
+                className="px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary-dark disabled:opacity-50 flex items-center"
+              >
+                {createUserMutation.isPending && (
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                {createUserMutation.isPending ? 'Creating...' : 'Create Admin User'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Users = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // Result modal state
+  const [resultModal, setResultModal] = useState({
+    isOpen: false,
+    type: 'success', // 'success' or 'error'
+    message: '',
+    details: ''
+  });
 
   const navigate = useNavigate();
 
   // Fetch users data
   const { data: usersResponse, isLoading, isError, error, refetch, isFetching } = useAdminUsers();
   const users = usersResponse?.data || [];
+
+  // Handle successful user creation
+  const handleCreateUserSuccess = (message, details) => {
+    console.log('🎉 User created successfully:', message);
+    setResultModal({
+      isOpen: true,
+      type: 'success',
+      message: message,
+      details: details
+    });
+  };
+
+  // Handle user creation error
+  const handleCreateUserError = (message, details) => {
+    console.error('❌ User creation failed:', message);
+    setResultModal({
+      isOpen: true,
+      type: 'error',
+      message: message,
+      details: details
+    });
+  };
+
+  // Close result modal
+  const closeResultModal = () => {
+    setResultModal({
+      isOpen: false,
+      type: 'success',
+      message: '',
+      details: ''
+    });
+  };
 
   // Get user statistics and filtered data
   const userStats = useMemo(() => {
@@ -129,6 +608,23 @@ const Users = () => {
           </div>
         )}
 
+        {/* Create User Modal */}
+        <CreateUserModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={handleCreateUserSuccess}
+          onError={handleCreateUserError}
+        />
+
+        {/* Result Modal */}
+        <ResultModal
+          isOpen={resultModal.isOpen}
+          onClose={closeResultModal}
+          type={resultModal.type}
+          message={resultModal.message}
+          details={resultModal.details}
+        />
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white rounded-lg shadow p-6">
@@ -173,9 +669,12 @@ const Users = () => {
             >
               {isFetching ? 'Refreshing...' : 'Refresh'}
             </button>
-            {/* <button className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark">
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark"
+            >
               Add User
-            </button> */}
+            </button>
           </div>
         </div>
 
