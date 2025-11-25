@@ -250,6 +250,37 @@ export const useOnboardCompany = () => {
 };
 
 // ============================================================================
+// ONBOARD USER MUTATION
+// ============================================================================
+
+export const useOnboardUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ companyId, userData }) => {
+      console.log('👤 Onboarding user for company:', { companyId, userData });
+      
+      // Use Admin endpoint for user onboarding
+      const response = await apiService.post(`/companies/${companyId}/users`, userData);
+      console.log('📡 Onboard user API response:', response);
+      
+      return response;
+    },
+    onSuccess: (response, variables) => {
+      console.log('✅ User onboarded successfully:', response);
+      
+      // Invalidate related queries
+      queryClient.invalidateQueries([COMPANY_QUERY_KEYS.COMPANY_DETAILS, variables.companyId]);
+      queryClient.invalidateQueries([COMPANY_QUERY_KEYS.USERS]);
+      
+    },
+    onError: (error) => {
+      console.error('❌ User onboarding failed:', error);
+    },
+  });
+};
+
+// ============================================================================
 // FETCH USER DETAILS
 // ============================================================================
 
@@ -358,4 +389,19 @@ export const validateAccountNumber = (accountNumber) => {
 export const validateAmount = (amount) => {
   const numericAmount = parseFloat(amount);
   return numericAmount > 0 && numericAmount >= 0.01;
+};
+
+// Validate email
+export const validateEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Validate password strength
+export const validatePassword = (password) => {
+  // At least 8 characters, 1 uppercase, 1 lowercase, 1 number
+  return password.length >= 8 && 
+         /[A-Z]/.test(password) && 
+         /[a-z]/.test(password) && 
+         /\d/.test(password);
 };
