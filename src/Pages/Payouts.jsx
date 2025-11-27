@@ -71,11 +71,32 @@ const Payouts = () => {
     setActionType(null);
   };
 
+  // Format status for display
+  const formatStatusDisplay = (status) => {
+    switch (status) {
+      case 'PendingAdminApproval':
+        return 'Pending Admin Approval';
+      default:
+        return status;
+    }
+  };
+
+  // Format approval status for display
+  const formatApprovalStatusDisplay = (approvalStatus) => {
+    switch (approvalStatus) {
+      case 'PendingAdminApproval':
+        return 'Pending Admin Approval';
+      default:
+        return approvalStatus;
+    }
+  };
+
   // Get status badge color
   const getStatusBadge = (status) => {
     switch (status?.toLowerCase()) {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'pendingadminapproval': return 'bg-orange-100 text-orange-800';
       case 'failed': return 'bg-red-100 text-red-800';
       case 'cancelled': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -87,6 +108,7 @@ const Payouts = () => {
     switch (approvalStatus?.toLowerCase()) {
       case 'approved': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'pendingadminapproval': return 'bg-orange-100 text-orange-800';
       case 'rejected': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -94,8 +116,8 @@ const Payouts = () => {
 
   // Check if payout can be approved/rejected
   const canApproveReject = (payout) => {
-    return payout.status === 'Pending' && 
-           payout.approvalStatus === 'Pending' && 
+    return (payout.status === 'Pending' || payout.status === 'PendingAdminApproval') && 
+           (payout.approvalStatus === 'Pending' || payout.approvalStatus === 'PendingAdminApproval') && 
            payout.requiresApproval;
   };
 
@@ -197,6 +219,7 @@ const Payouts = () => {
                 <option value="">All Statuses</option>
                 <option value="Completed">Completed</option>
                 <option value="Pending">Pending</option>
+                <option value="PendingAdminApproval">Pending Admin Approval</option>
                 <option value="Failed">Failed</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
@@ -292,7 +315,7 @@ const Payouts = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(payout.status)}`}>
-                                {payout.status}
+                                {formatStatusDisplay(payout.status)}
                               </span>
                               {payout.failureReason && (
                                 <div className="text-xs text-red-600 mt-1" title={payout.failureReason}>
@@ -302,12 +325,12 @@ const Payouts = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getApprovalBadge(payout.approvalStatus)}`}>
-                                {payout.approvalStatus}
+                                {formatApprovalStatusDisplay(payout.approvalStatus)}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-mono text-gray-900" title={payout.transactionReference}>
-                                {payout.transactionReference?.substring(0, 20)}...
+                                {payout.transactionReference ? `${payout.transactionReference.substring(0, 20)}...` : 'N/A'}
                               </div>
                               {payout.providerReference && (
                                 <div className="text-xs font-mono text-gray-500" title={payout.providerReference}>
@@ -326,13 +349,15 @@ const Payouts = () => {
                                   <>
                                     <button 
                                       onClick={() => handlePayoutAction(payout, 'approve')}
-                                      className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                                      className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                                      title="Approve this payout"
                                     >
                                       Approve
                                     </button>
                                     <button 
                                       onClick={() => handlePayoutAction(payout, 'reject')}
-                                      className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                                      className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                                      title="Reject this payout"
                                     >
                                       Reject
                                     </button>
