@@ -27,6 +27,8 @@ import InterestSections from "./Pages/TreegarBanking/Interests";
 import CustomerProfile from "./components/TreegarComponents/CustomerProfile";
 import CustomerTransactions from "./components/TreegarComponents/CustomerTransactions";
 import DocumentVerification from "./components/TreegarComponents/DocumentVerification";
+import GlobalInflowFees from "./components/TreegarComponents/GlobalInflowFees";
+import BankingTransactions from "./Pages/TreegarBanking/BankingTransactions";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -167,6 +169,24 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Approvals />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/banking/inflow-fees"
+              element={
+                <ProtectedRoute>
+                  <GlobalInflowFees />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/banking/transactions"
+              element={
+                <ProtectedRoute>
+                  <BankingTransactions />
                 </ProtectedRoute>
               }
             />

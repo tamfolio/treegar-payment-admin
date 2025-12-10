@@ -5,14 +5,16 @@ import { useCustomerProfile } from '../../hooks/customerHooks';
 import ApprovalRules from './ApprovalRules';
 import OnboardingApprovalModal from './OnboardingApprovalModal';
 import PayoutModeModal from './PayoutModeModal';
+import CustomerInflowFeesModal from './CustomerInflowFeesModal';
 
 const CustomerProfile = () => {
   const { customerId } = useParams();
   const navigate = useNavigate();
   
   // Modal states
-  const [showOnboardingModal, setShowOnboardingModal] = useState(true);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
+  const [showInflowFeesModal, setShowInflowFeesModal] = useState(false);
 
   const { 
     data: customerResponse, 
@@ -344,6 +346,12 @@ const CustomerProfile = () => {
                 >
                   Document Verification
                 </Link>
+                <button 
+                  onClick={() => setShowInflowFeesModal(true)}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                >
+                  Inflow Fees Settings
+                </button>
                 <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
                   View Account Balance
                 </button>
@@ -368,6 +376,12 @@ const CustomerProfile = () => {
         <PayoutModeModal
           isOpen={showPayoutModal}
           onClose={() => setShowPayoutModal(false)}
+          customer={customer}
+        />
+
+        <CustomerInflowFeesModal
+          isOpen={showInflowFeesModal}
+          onClose={() => setShowInflowFeesModal(false)}
           customer={customer}
         />
       </div>

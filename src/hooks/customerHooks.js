@@ -202,7 +202,7 @@ export const useCustomerStats = (filters = {}) => {
   });
 };
 
-// Get customer transactions with filters
+// Get customer transactions with filters (or all platform transactions if no customerId)
 export const useCustomerTransactions = (filters = {}, options = {}) => {
   const {
     customerId,
@@ -236,16 +236,16 @@ export const useCustomerTransactions = (filters = {}, options = {}) => {
     }],
     queryFn: async () => {
       const params = {
-        customerId,
-        ...(search && { search }),
+        ...(customerId && customerId.trim() && { customerId }), // Only include customerId if it's not empty
+        ...(search && search.trim() && { search }),
         ...(startDate && { startDate }),
         ...(endDate && { endDate }),
-        ...(productId && { productId }),
-        ...(type && { type }),
-        ...(direction && { direction }),
-        ...(status && { status }),
-        ...(minAmount && { minAmount }),
-        ...(maxAmount && { maxAmount }),
+        ...(productId && productId.toString().trim() && { productId }),
+        ...(type && type.trim() && { type }),
+        ...(direction && direction.trim() && { direction }),
+        ...(status && status.trim() && { status }),
+        ...(minAmount && minAmount.toString().trim() && { minAmount }),
+        ...(maxAmount && maxAmount.toString().trim() && { maxAmount }),
         pageNumber,
         pageSize,
       };
@@ -253,7 +253,8 @@ export const useCustomerTransactions = (filters = {}, options = {}) => {
       const response = await apiService.get('/customers/transactions', params);
       return response;
     },
-    enabled: !!customerId,
+    // Always enable the query - let the API handle the filtering
+    enabled: true,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
     ...options,
@@ -594,5 +595,78 @@ export const useInterestExpenseSummary = (filters = {}, options = {}) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     ...options,
+  });
+};
+
+// ============================================================================
+// INFLOW FEES HOOKS
+// ============================================================================
+
+// Get global inflow fees
+export const useGlobalInflowFees = (currency = 'NGN', options = {}) => {
+  return useQuery({
+    queryKey: [CUSTOMERS_QUERY_KEYS.CUSTOMERS, 'global-inflow-fees', currency],
+    queryFn: async () => {
+      const response = await apiService.get('/inflow-fees/global', { currency });
+      return response;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    ...options,
+  });
+};
+
+// Update global inflow fees
+export const useUpdateGlobalInflowFees = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (feeData) => {
+      const response = await apiService.put('/inflow-fees/global', feeData);
+      return response;
+    },
+    onSuccess: () => {
+      // Invalidate global inflow fees queries
+      queryClient.invalidateQueries({ 
+        queryKey: [CUSTOMERS_QUERY_KEYS.CUSTOMERS, 'global-inflow-fees'] 
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to update global inflow fees:', error);
+    },
+  });
+};
+
+// Get customer inflow fees
+export const useCustomerInflowFees = (customerId, options = {}) => {
+  return useQuery({
+    queryKey: [CUSTOMERS_QUERY_KEYS.CUSTOMERS, 'customer-inflow-fees', customerId],
+    queryFn: async () => {
+      const response = await apiService.get(`/inflow-fees/customers/${customerId}`);
+      return response;
+    },
+    enabled: !!customerId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    ...options,
+  });
+};
+
+// Update customer inflow fees
+export const useUpdateCustomerInflowFees = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ customerId, feeData }) => {
+      const response = await apiService.put(`/inflow-fees/customers/${customerId}`, feeData);
+      return response;
+    },
+    onSuccess: (data, { customerId }) => {
+      // Invalidate customer inflow fees queries
+      queryClient.invalidateQueries({ 
+        queryKey: [CUSTOMERS_QUERY_KEYS.CUSTOMERS, 'customer-inflow-fees', customerId] 
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to update customer inflow fees:', error);
+    },
   });
 };
