@@ -20,6 +20,13 @@ import RolesPermissions from "./Pages/RolesPermissions";
 import UserDetails from "./Pages/UserDetails";
 import CompanyDetails from "./Pages/CompanyDetails";
 import CompanyTransactions from "./Pages/CompanyTransactions";
+import Customers from "./Pages/TreegarBanking/Customers";
+import Approvals from "./Pages/TreegarBanking/Approvals";
+import Onboarding from "./Pages/TreegarBanking/Onboarding";
+import InterestSections from "./Pages/TreegarBanking/Interests";
+import CustomerProfile from "./components/TreegarComponents/CustomerProfile";
+import CustomerTransactions from "./components/TreegarComponents/CustomerTransactions";
+import DocumentVerification from "./components/TreegarComponents/DocumentVerification";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -121,6 +128,66 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* Banking Routes */}
+            <Route
+              path="/banking/customers"
+              element={
+                <ProtectedRoute>
+                  <Customers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/banking/customers/:customerId"
+              element={
+                <ProtectedRoute>
+                  <CustomerProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/banking/customers/:customerId/transactions"
+              element={
+                <ProtectedRoute>
+                  <CustomerTransactions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/banking/customers/:customerId/verification"
+              element={
+                <ProtectedRoute>
+                  <DocumentVerification />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/banking/approvals"
+              element={
+                <ProtectedRoute>
+                  <Approvals />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/banking/onboarding"
+              element={
+                <ProtectedRoute>
+                  <Onboarding />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/banking/interest-sections"
+              element={
+                <ProtectedRoute>
+                  <InterestSections />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Detailed Routes */}
             <Route
               path="/dashboard/:id"
               element={
@@ -137,7 +204,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-              <Route
+            <Route
               path="/users/:id"
               element={
                 <ProtectedRoute>
@@ -154,7 +221,6 @@ function App() {
               }
             />
           </Routes>
-          
         </Router>
       </AuthProvider>
 

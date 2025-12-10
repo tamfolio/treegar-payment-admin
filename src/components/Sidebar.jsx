@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getCurrentUser } from '../hooks/authhooks';
 import treegarLogo from '/Images/treegarlogo.svg';
@@ -6,6 +6,7 @@ import treegarLogo from '/Images/treegarlogo.svg';
 const Sidebar = () => {
   const location = useLocation();
   const user = getCurrentUser();
+  const [isBankingExpanded, setIsBankingExpanded] = useState(false);
 
   const navigation = [
     {
@@ -64,6 +65,50 @@ const Sidebar = () => {
     },
   ];
 
+  const bankingSubNavigation = [
+    {
+      name: 'Customers',
+      href: '/banking/customers',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Approvals',
+      href: '/banking/approvals',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Onboarding',
+      href: '/banking/onboarding',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Interest Sections',
+      href: '/banking/interest-sections',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+  ];
+
+  // Check if any banking sub-route is active
+  const isBankingRouteActive = bankingSubNavigation.some(item => 
+    location.pathname.startsWith(item.href)
+  );
+
   return (
     <div className="w-64 bg-gray-900 text-white h-full fixed left-0 top-0 overflow-y-auto">
       <div className="p-6 border-b border-gray-800">
@@ -105,6 +150,60 @@ const Sidebar = () => {
               </Link>
             );
           })}
+          
+          {/* Treegar x Banking Section */}
+          <div className="mt-4">
+            <button
+              onClick={() => setIsBankingExpanded(!isBankingExpanded)}
+              className={`flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-lg mb-2 transition-colors ${
+                isBankingRouteActive
+                  ? 'bg-primary text-white'
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center">
+                <span className="mr-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                  </svg>
+                </span>
+                Treegar x Banking
+              </div>
+              <svg
+                className={`w-4 h-4 transform transition-transform ${
+                  isBankingExpanded ? 'rotate-180' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {/* Banking Sub-navigation */}
+            {isBankingExpanded && (
+              <div className="ml-4 space-y-1">
+                {bankingSubNavigation.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={`flex items-center px-4 py-2 text-sm rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-primary text-white'
+                          : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                      }`}
+                    >
+                      <span className="mr-3">{item.icon}</span>
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </nav>
     </div>
