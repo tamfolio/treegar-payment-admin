@@ -1,12 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getCurrentUser } from '../hooks/authhooks';
 import treegarLogo from '/Images/treegarlogo.svg';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const user = getCurrentUser();
   const [isBankingExpanded, setIsBankingExpanded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if mobile view
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Auto-expand banking section if we're on a banking route
+  useEffect(() => {
+    const isBankingRoute = location.pathname.startsWith('/banking/');
+    if (isBankingRoute) {
+      setIsBankingExpanded(true);
+    }
+  }, [location.pathname]);
 
   const navigation = [
     {
@@ -127,104 +147,183 @@ const Sidebar = () => {
     location.pathname.startsWith(item.href)
   );
 
+  // Handle link clicks on mobile - close sidebar
+  const handleLinkClick = () => {
+    if (isMobile && onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="w-64 bg-gray-900 text-white h-full fixed left-0 top-0 overflow-y-auto">
-      <div className="p-6 border-b border-gray-800">
-        {/* Logo */}
-        <div className="flex items-center mb-4">
-          <img
-            src={treegarLogo}
-            alt="Treegar Logo"
-            className="h-10 w-auto mr-3"
-          />
-        </div>
+    <>
+      {/* Mobile Overlay */}
+      {isMobile && isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`${
+        isMobile 
+          ? `fixed inset-y-0 left-0 z-50 w-80 transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`
+          : 'fixed left-0 top-0 w-64'
+      } bg-gray-900 text-white h-full overflow-y-auto`}>
         
-        {/* User Info */}
-        {user && (
-          <div className="text-sm">
-            <p className="text-gray-300">Welcome back,</p>
-            <p className="font-semibold">{user.firstName} {user.lastName}</p>
-            <p className="text-xs text-gray-400">{user.email}</p>
+        {/* Mobile Header */}
+        {isMobile && (
+          <div className="flex items-center justify-between p-4 border-b border-gray-800 lg:hidden">
+            <div className="flex items-center">
+              <img
+                src={treegarLogo}
+                alt="Treegar Logo"
+                className="h-8 w-auto mr-2"
+              />
+              <span className="text-lg font-semibold">Treegar X</span>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         )}
-      </div>
-      
-      <nav className="mt-8">
-        <div className="px-4">
-          {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg mb-2 transition-colors ${
-                  isActive
+
+        {/* Desktop Header */}
+        {!isMobile && (
+          <div className="p-6 border-b border-gray-800">
+            {/* Logo */}
+            <div className="flex items-center mb-4">
+              <img
+                src={treegarLogo}
+                alt="Treegar Logo"
+                className="h-10 w-auto mr-3"
+              />
+            </div>
+            
+            {/* User Info */}
+            {user && (
+              <div className="text-sm">
+                <p className="text-gray-300">Welcome back,</p>
+                <p className="font-semibold">{user.firstName} {user.lastName}</p>
+                <p className="text-xs text-gray-400">{user.email}</p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Mobile User Info */}
+        {isMobile && user && (
+          <div className="px-4 py-3 border-b border-gray-800 lg:hidden">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                  <span className="text-white font-medium">
+                    {user.firstName?.[0]}{user.lastName?.[0]}
+                  </span>
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="font-semibold text-sm">{user.firstName} {user.lastName}</p>
+                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <nav className={`${isMobile ? 'mt-2' : 'mt-8'}`}>
+          <div className="px-4">
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  onClick={handleLinkClick}
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg mb-2 transition-colors ${
+                    isActive
+                      ? 'bg-primary text-white'
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  }`}
+                >
+                  <span className="mr-3">{item.icon}</span>
+                  {item.name}
+                </Link>
+              );
+            })}
+            
+            {/* Treegar x Banking Section */}
+            <div className="mt-4">
+              <button
+                onClick={() => setIsBankingExpanded(!isBankingExpanded)}
+                className={`flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-lg mb-2 transition-colors ${
+                  isBankingRouteActive
                     ? 'bg-primary text-white'
                     : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                 }`}
               >
-                <span className="mr-3">{item.icon}</span>
-                {item.name}
-              </Link>
-            );
-          })}
-          
-          {/* Treegar x Banking Section */}
-          <div className="mt-4">
-            <button
-              onClick={() => setIsBankingExpanded(!isBankingExpanded)}
-              className={`flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-lg mb-2 transition-colors ${
-                isBankingRouteActive
-                  ? 'bg-primary text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center">
-                <span className="mr-3">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
-                  </svg>
-                </span>
-                Treegar x Banking
-              </div>
-              <svg
-                className={`w-4 h-4 transform transition-transform ${
-                  isBankingExpanded ? 'rotate-180' : ''
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            
-            {/* Banking Sub-navigation */}
-            {isBankingExpanded && (
-              <div className="ml-4 space-y-1">
-                {bankingSubNavigation.map((item) => {
-                  const isActive = location.pathname === item.href;
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`flex items-center px-4 py-2 text-sm rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-primary text-white'
-                          : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                      }`}
-                    >
-                      <span className="mr-3">{item.icon}</span>
-                      {item.name}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
+                <div className="flex items-center">
+                  <span className="mr-3">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                    </svg>
+                  </span>
+                  <span className={`${isMobile ? 'text-sm' : ''}`}>Treegar x Banking</span>
+                </div>
+                <svg
+                  className={`w-4 h-4 transform transition-transform ${
+                    isBankingExpanded ? 'rotate-180' : ''
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {/* Banking Sub-navigation */}
+              {isBankingExpanded && (
+                <div className="ml-4 space-y-1">
+                  {bankingSubNavigation.map((item) => {
+                    const isActive = location.pathname === item.href;
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        onClick={handleLinkClick}
+                        className={`flex items-center px-4 py-2 text-sm rounded-lg transition-colors ${
+                          isActive
+                            ? 'bg-primary text-white'
+                            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                        }`}
+                      >
+                        <span className="mr-3">{item.icon}</span>
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </nav>
-    </div>
+        </nav>
+
+        {/* Mobile Footer */}
+        {isMobile && (
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800 lg:hidden">
+            <div className="text-center text-xs text-gray-400">
+              <p>Treegar X Banking Platform</p>
+              <p>v1.0.0</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 
