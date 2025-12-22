@@ -254,6 +254,25 @@ const Companies = () => {
   const { data: companiesResponse, isLoading, isError, error, refetch, isFetching } = useCompaniesList();
   const companies = companiesResponse?.data || [];
 
+  // Format currency amounts
+  const formatAmount = (amount, currency = "NGN") => {
+    const numAmount = amount || 0; // Default to 0 if null/undefined
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(numAmount);
+  };
+
+  // Get total balance for a company (sum of all accounts)
+  const getTotalBalance = (accountBalances) => {
+    if (!accountBalances || accountBalances.length === 0) return 0;
+    return accountBalances.reduce((sum, account) => {
+      return sum + (account.availableBalance || 0);
+    }, 0);
+  };
+
   // Handle approval success
   const handleApprovalSuccess = (message, details) => {
     console.log('🎉 Approval action successful:', message);
@@ -331,11 +350,17 @@ const Companies = () => {
     const pendingCompanies = companies.filter(company => company.status === 'Pending').length;
     const approvedCompanies = companies.filter(company => company.isApproved === true).length;
 
+    // Calculate total balance across all companies
+    const totalBalance = companies.reduce((sum, company) => {
+      return sum + getTotalBalance(company.accountBalances);
+    }, 0);
+
     return {
       totalCompanies,
       activeCompanies,
       pendingCompanies,
-      approvedCompanies
+      approvedCompanies,
+      totalBalance
     };
   }, [companies]);
 
@@ -461,7 +486,7 @@ const Companies = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-sm font-medium text-gray-500">Total Companies</h3>
             <p className="text-2xl font-bold text-gray-900">{companyStats.totalCompanies}</p>
@@ -484,6 +509,12 @@ const Companies = () => {
             <h3 className="text-sm font-medium text-gray-500">Approved Companies</h3>
             <p className="text-2xl font-bold text-gray-900">{companyStats.approvedCompanies}</p>
             <p className="text-xs text-indigo-600">Verified and approved</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-sm font-medium text-gray-500">Total Balance</h3>
+            <p className="text-2xl font-bold text-gray-900">{formatAmount(companyStats.totalBalance)}</p>
+            <p className="text-xs text-purple-600">All companies combined</p>
           </div>
         </div>
 
@@ -634,6 +665,7 @@ const Companies = () => {
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Code</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Balances</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approval</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
@@ -647,6 +679,7 @@ const Companies = () => {
                         const { date: approvedDate, time: approvedTime } = formatDate(company.approvedAt);
                         const isPending = !company.isApproved && company.status?.toLowerCase() !== 'rejected';
                         const isRejected = company.status?.toLowerCase() === 'rejected';
+                        const totalBalance = getTotalBalance(company.accountBalances);
                         
                         return (
                           <tr 
@@ -671,6 +704,24 @@ const Companies = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-mono text-gray-900">{company.companyCode}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {company.accountBalances && company.accountBalances.length > 0 ? (
+                                <div className="space-y-1">
+                                  <div className="text-xs text-gray-500">
+                                    {company.accountBalances.map((account, idx) => (
+                                      <div key={idx} className="flex justify-between">
+                                        <span>{account.accountType}:</span>
+                                        <span className="font-medium">
+                                          {account.error ? 'N/A' : formatAmount(account.availableBalance || 0)}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-sm text-gray-500">No balance data</div>
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(company.status)}`}>
