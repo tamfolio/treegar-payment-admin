@@ -294,7 +294,7 @@ export const useUpdateDocumentStatus = () => {
 
   return useMutation({
     mutationFn: async ({ documentId, status, notes }) => {
-      const response = await apiService.put(`/customers/documents/${documentId}/status`, {
+      const response = await apiService.post(`/customers/documents/${documentId}/status`, {
         status,
         notes,
       });
@@ -318,7 +318,7 @@ export const useUpdateVerificationStatus = () => {
 
   return useMutation({
     mutationFn: async ({ verificationId, status, notes }) => {
-      const response = await apiService.put(`/customers/verifications/${verificationId}/status`, {
+      const response = await apiService.post(`/customers/verifications/${verificationId}/status`, {
         status,
         notes,
       });
