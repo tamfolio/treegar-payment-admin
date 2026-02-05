@@ -132,7 +132,7 @@ const CreateUserModal = ({ isOpen, onClose, onSuccess, onError }) => {
       };
       
       console.log('📡 API payload:', payload);
-      const response = await apiService.post('/setup', payload);
+      const response = await apiService.post('/users', payload);
       console.log('✅ User created successfully:', response);
       return response;
     },
