@@ -1,58 +1,75 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import Layout from '../../components/Layout';
-import { useCustomerProfile } from '../../hooks/customerHooks';
-import ApprovalRules from './ApprovalRules';
-import OnboardingApprovalModal from './OnboardingApprovalModal';
-import PayoutModeModal from './PayoutModeModal';
-import CustomerInflowFeesModal from './CustomerInflowFeesModal';
+import React, { useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import Layout from "../../components/Layout";
+import { useCustomerProfile } from "../../hooks/customerHooks";
+import ApprovalRules from "./ApprovalRules";
+import OnboardingApprovalModal from "./OnboardingApprovalModal";
+import PayoutModeModal from "./PayoutModeModal";
+import CustomerInflowFeesModal from "./CustomerInflowFeesModal";
 
 const CustomerProfile = () => {
   const { customerId } = useParams();
   const navigate = useNavigate();
-  
+
   // Modal states
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [showInflowFeesModal, setShowInflowFeesModal] = useState(false);
 
-  const { 
-    data: customerResponse, 
-    isLoading, 
-    error 
+  const {
+    data: customerResponse,
+    isLoading,
+    error,
   } = useCustomerProfile(customerId);
 
   const customer = customerResponse?.data;
 
   // Status badge component
-  const StatusBadge = ({ status, type = 'status' }) => {
+  const StatusBadge = ({ status, type = "status" }) => {
     const getStatusColor = (status, type) => {
-      if (type === 'kyc') {
+      if (type === "kyc") {
         switch (status?.toLowerCase()) {
-          case 'verified': return 'bg-green-100 text-green-800';
-          case 'pending': return 'bg-yellow-100 text-yellow-800';
-          case 'rejected': return 'bg-red-100 text-red-800';
-          default: return 'bg-gray-100 text-gray-800';
+          case "verified":
+            return "bg-green-100 text-green-800";
+          case "pending":
+            return "bg-yellow-100 text-yellow-800";
+          case "rejected":
+            return "bg-red-100 text-red-800";
+          default:
+            return "bg-gray-100 text-gray-800";
         }
-      } else if (type === 'onboarding') {
+      } else if (type === "onboarding") {
         switch (status?.toLowerCase()) {
-          case 'approved': return 'bg-green-100 text-green-800';
-          case 'pending': return 'bg-yellow-100 text-yellow-800';
-          case 'rejected': return 'bg-red-100 text-red-800';
-          default: return 'bg-gray-100 text-gray-800';
+          case "approved":
+            return "bg-green-100 text-green-800";
+          case "pending":
+            return "bg-yellow-100 text-yellow-800";
+          case "rejected":
+            return "bg-red-100 text-red-800";
+          default:
+            return "bg-gray-100 text-gray-800";
         }
       } else {
         switch (status?.toLowerCase()) {
-          case 'active': return 'bg-green-100 text-green-800';
-          case 'inactive': return 'bg-red-100 text-red-800';
-          case 'suspended': return 'bg-yellow-100 text-yellow-800';
-          default: return 'bg-gray-100 text-gray-800';
+          case "active":
+            return "bg-green-100 text-green-800";
+          case "inactive":
+            return "bg-red-100 text-red-800";
+          case "suspended":
+            return "bg-yellow-100 text-yellow-800";
+          default:
+            return "bg-gray-100 text-gray-800";
         }
       }
     };
 
     return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(status, type)}`}>
+      <span
+        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+          status,
+          type
+        )}`}
+      >
         {status}
       </span>
     );
@@ -94,14 +111,28 @@ const CustomerProfile = () => {
         <div className="p-6">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex">
-              <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="h-5 w-5 text-red-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Error loading customer</h3>
-                <p className="text-sm text-red-700 mt-1">{error?.message || 'An error occurred'}</p>
+                <h3 className="text-sm font-medium text-red-800">
+                  Error loading customer
+                </h3>
+                <p className="text-sm text-red-700 mt-1">
+                  {error?.message || "An error occurred"}
+                </p>
                 <button
-                  onClick={() => navigate('/banking/customers')}
+                  onClick={() => navigate("/banking/customers")}
                   className="mt-2 text-sm text-red-700 underline hover:text-red-900"
                 >
                   ← Back to Customers
@@ -119,15 +150,27 @@ const CustomerProfile = () => {
       <Layout>
         <div className="p-6">
           <div className="text-center">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            <svg
+              className="mx-auto h-12 w-12 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
             </svg>
-            <h3 className="mt-4 text-lg font-medium text-gray-900">Customer not found</h3>
+            <h3 className="mt-4 text-lg font-medium text-gray-900">
+              Customer not found
+            </h3>
             <p className="mt-2 text-sm text-gray-500">
               The customer you're looking for doesn't exist or has been removed.
             </p>
             <button
-              onClick={() => navigate('/banking/customers')}
+              onClick={() => navigate("/banking/customers")}
               className="mt-4 text-sm text-primary underline hover:text-primary-dark"
             >
               ← Back to Customers
@@ -148,18 +191,31 @@ const CustomerProfile = () => {
               to="/banking/customers"
               className="text-gray-500 hover:text-gray-700 mr-4"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
             </Link>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {customer.businessName || `${customer.firstName} ${customer.lastName}`}
+                {customer.businessName ||
+                  `${customer.firstName} ${customer.lastName}`}
               </h1>
-              <p className="text-gray-600 mt-1">Customer Profile • {customer.customerCode}</p>
+              <p className="text-gray-600 mt-1">
+                Customer Profile • {customer.customerCode}
+              </p>
             </div>
           </div>
-          
+
           <div className="flex space-x-2">
             <StatusBadge status={customer.status} />
             <StatusBadge status={customer.kycStatus} type="kyc" />
@@ -172,44 +228,78 @@ const CustomerProfile = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Information */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Basic Information
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Customer Type</label>
-                  <p className="mt-1 text-sm text-gray-900">{customer.customerType}</p>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Customer Type
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {customer.customerType}
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Customer Code</label>
-                  <p className="mt-1 text-sm text-gray-900 font-mono">{customer.customerCode}</p>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Customer Code
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900 font-mono">
+                    {customer.customerCode}
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Customer Tag</label>
-                  <p className="mt-1 text-sm text-gray-900 font-mono">{customer.tag}</p>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Customer Tag
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900 font-mono">
+                    {customer.tag}
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Company</label>
-                  <p className="mt-1 text-sm text-gray-900">{customer.companyName}</p>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Company
+                  </label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {customer.companyName}
+                  </p>
                 </div>
-                {customer.customerType === 'Individual' ? (
+                {customer.customerType === "Individual" ? (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500">First Name</label>
-                      <p className="mt-1 text-sm text-gray-900">{customer.firstName}</p>
+                      <label className="block text-sm font-medium text-gray-500">
+                        First Name
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {customer.firstName}
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500">Last Name</label>
-                      <p className="mt-1 text-sm text-gray-900">{customer.lastName}</p>
+                      <label className="block text-sm font-medium text-gray-500">
+                        Last Name
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {customer.lastName}
+                      </p>
                     </div>
                   </>
                 ) : (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500">Business Name</label>
-                      <p className="mt-1 text-sm text-gray-900">{customer.businessName || 'N/A'}</p>
+                      <label className="block text-sm font-medium text-gray-500">
+                        Business Name
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {customer.businessName || "N/A"}
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-500">Contact Person</label>
-                      <p className="mt-1 text-sm text-gray-900">{customer.firstName} {customer.lastName}</p>
+                      <label className="block text-sm font-medium text-gray-500">
+                        Contact Person
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {customer.firstName} {customer.lastName}
+                      </p>
                     </div>
                   </>
                 )}
@@ -218,13 +308,17 @@ const CustomerProfile = () => {
 
             {/* Contact Information */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Contact Information
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Email Address</label>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Email Address
+                  </label>
                   <p className="mt-1 text-sm text-gray-900">
-                    <a 
-                      href={`mailto:${customer.email}`} 
+                    <a
+                      href={`mailto:${customer.email}`}
                       className="text-primary hover:text-primary-dark"
                     >
                       {customer.email}
@@ -232,10 +326,12 @@ const CustomerProfile = () => {
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Phone Number</label>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Phone Number
+                  </label>
                   <p className="mt-1 text-sm text-gray-900">
-                    <a 
-                      href={`tel:${customer.phoneNumber}`} 
+                    <a
+                      href={`tel:${customer.phoneNumber}`}
                       className="text-primary hover:text-primary-dark"
                     >
                       {customer.phoneNumber}
@@ -247,24 +343,35 @@ const CustomerProfile = () => {
 
             {/* Status Information */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Status Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Status Information
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Account Status</label>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Account Status
+                  </label>
                   <div className="mt-1">
                     <StatusBadge status={customer.status} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">KYC Status</label>
+                  <label className="block text-sm font-medium text-gray-500">
+                    KYC Status
+                  </label>
                   <div className="mt-1">
                     <StatusBadge status={customer.kycStatus} type="kyc" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Onboarding Status</label>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Onboarding Status
+                  </label>
                   <div className="mt-1">
-                    <StatusBadge status={customer.onboardingStatus} type="onboarding" />
+                    <StatusBadge
+                      status={customer.onboardingStatus}
+                      type="onboarding"
+                    />
                   </div>
                 </div>
               </div>
@@ -275,14 +382,20 @@ const CustomerProfile = () => {
           <div className="space-y-6">
             {/* Settings */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Settings</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Settings
+              </h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Onboarding Mode</label>
-                    <p className="mt-1 text-sm text-gray-900">{customer.onboardingMode}</p>
+                    <label className="block text-sm font-medium text-gray-500">
+                      Onboarding Mode
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {customer.onboardingMode}
+                    </p>
                   </div>
-                  {customer.onboardingStatus !== 'Approved' && (
+                  {customer.onboardingStatus !== "Approved" && (
                     <button
                       onClick={() => setShowOnboardingModal(true)}
                       className="px-3 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200"
@@ -293,8 +406,12 @@ const CustomerProfile = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Payout Mode</label>
-                    <p className="mt-1 text-sm text-gray-900">{customer.payoutMode}</p>
+                    <label className="block text-sm font-medium text-gray-500">
+                      Payout Mode
+                    </label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {customer.payoutMode}
+                    </p>
                   </div>
                   <button
                     onClick={() => setShowPayoutModal(true)}
@@ -308,17 +425,23 @@ const CustomerProfile = () => {
 
             {/* Important Dates */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Important Dates</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Important Dates
+              </h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-500">Created At</label>
+                  <label className="block text-sm font-medium text-gray-500">
+                    Created At
+                  </label>
                   <p className="mt-1 text-sm text-gray-900">
                     {new Date(customer.createdAt).toLocaleString()}
                   </p>
                 </div>
                 {customer.updatedAt && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Last Updated</label>
+                    <label className="block text-sm font-medium text-gray-500">
+                      Last Updated
+                    </label>
                     <p className="mt-1 text-sm text-gray-900">
                       {new Date(customer.updatedAt).toLocaleString()}
                     </p>
@@ -327,12 +450,76 @@ const CustomerProfile = () => {
               </div>
             </div>
 
+            {/* Wallet Balances */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Wallet Balances
+              </h3>
+              {customer.balances && customer.balances.length > 0 ? (
+                <div className="space-y-3">
+                  {customer.balances.map((wallet) => (
+                    <div
+                      key={wallet.walletId}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {wallet.currencyCode}
+                          </span>
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              wallet.walletStatus === "Active"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {wallet.walletStatus}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Wallet #{wallet.walletId} · {wallet.currencyName}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-base font-bold text-gray-900">
+                          {new Intl.NumberFormat("en-NG", {
+                            style: "currency",
+                            currency: wallet.currencyCode,
+                          }).format(wallet.currentBalance)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <svg
+                    className="mx-auto h-8 w-8 text-gray-300 mb-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                    />
+                  </svg>
+                  <p className="text-sm text-gray-400">No wallets found</p>
+                </div>
+              )}
+            </div>
+
             {/* Approval Rules */}
             <ApprovalRules customerId={customerId} />
 
             {/* Quick Actions */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Quick Actions
+              </h3>
               <div className="space-y-3">
                 <Link
                   to={`/banking/customers/${customerId}/transactions`}
@@ -346,7 +533,7 @@ const CustomerProfile = () => {
                 >
                   Document Verification
                 </Link>
-                <button 
+                <button
                   onClick={() => setShowInflowFeesModal(true)}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
                 >

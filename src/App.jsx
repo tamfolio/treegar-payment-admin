@@ -29,6 +29,9 @@ import CustomerTransactions from "./components/TreegarComponents/CustomerTransac
 import DocumentVerification from "./components/TreegarComponents/DocumentVerification";
 import GlobalInflowFees from "./components/TreegarComponents/GlobalInflowFees";
 import BankingTransactions from "./Pages/TreegarBanking/BankingTransactions";
+import BankingScheduledPayments from "./Pages/TreegarBanking/BankingScheduledPayments";
+import BankingP2PTransactions from "./Pages/TreegarBanking/BankingP2PTransactions";
+import CustomerAnalytics from "./Pages/TreegarBanking/CustomerAnalytics";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -149,6 +152,22 @@ function App() {
               }
             />
             <Route
+              path="/banking/p2p-transactions"
+              element={
+                <ProtectedRoute>
+                  <BankingP2PTransactions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/banking/analytics"
+              element={
+                <ProtectedRoute>
+                  <CustomerAnalytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/banking/customers/:customerId/transactions"
               element={
                 <ProtectedRoute>
@@ -187,6 +206,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <BankingTransactions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/banking/scheduled-payments"
+              element={
+                <ProtectedRoute>
+                  <BankingScheduledPayments />
                 </ProtectedRoute>
               }
             />
