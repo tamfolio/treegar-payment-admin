@@ -202,11 +202,14 @@ export const useCustomerStats = (filters = {}) => {
   });
 };
 
+
+
 // Get customer transactions with filters (or all platform transactions if no customerId)
 export const useCustomerTransactions = (filters = {}, options = {}) => {
   const {
     customerId,
     search = '',
+    customerTypeCode = '',
     startDate = '',
     endDate = '',
     productId = '',
@@ -220,32 +223,37 @@ export const useCustomerTransactions = (filters = {}, options = {}) => {
   } = filters;
 
   return useQuery({
-    queryKey: [CUSTOMERS_QUERY_KEYS.CUSTOMERS, 'transactions', { 
+    queryKey: [CUSTOMERS_QUERY_KEYS.CUSTOMERS, 'transactions', {
       customerId,
-      search, 
+      search,
+      customerTypeCode,
       startDate,
       endDate,
-      productId, 
-      type, 
-      direction, 
-      status, 
+      productId,
+      type,
+      direction,
+      status,
       minAmount,
       maxAmount,
-      pageNumber, 
-      pageSize 
+      pageNumber,
+      pageSize,
     }],
     queryFn: async () => {
+      // Safely coerce any value to a non-empty string check
+      const hasValue = (v) => v != null && String(v).trim() !== '';
+
       const params = {
-        ...(customerId && customerId.trim() && { customerId }), // Only include customerId if it's not empty
-        ...(search && search.trim() && { search }),
-        ...(startDate && { startDate }),
-        ...(endDate && { endDate }),
-        ...(productId && productId.toString().trim() && { productId }),
-        ...(type && type.trim() && { type }),
-        ...(direction && direction.trim() && { direction }),
-        ...(status && status.trim() && { status }),
-        ...(minAmount && minAmount.toString().trim() && { minAmount }),
-        ...(maxAmount && maxAmount.toString().trim() && { maxAmount }),
+        ...(hasValue(customerId)     && { customerId }),
+        ...(hasValue(search)         && { search }),
+        ...(hasValue(customerTypeCode) && { customerTypeCode }),
+        ...(hasValue(startDate)      && { startDate }),
+        ...(hasValue(endDate)        && { endDate }),
+        ...(hasValue(productId)      && { productId }),
+        ...(hasValue(type)           && { type }),
+        ...(hasValue(direction)      && { direction }),
+        ...(hasValue(status)         && { status }),
+        ...(hasValue(minAmount)      && { minAmount }),
+        ...(hasValue(maxAmount)      && { maxAmount }),
         pageNumber,
         pageSize,
       };
@@ -253,14 +261,12 @@ export const useCustomerTransactions = (filters = {}, options = {}) => {
       const response = await apiService.get('/customers/transactions', params);
       return response;
     },
-    // Always enable the query - let the API handle the filtering
     enabled: true,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
     ...options,
   });
 };
-
 // Get customer review data (profile, verifications, documents)
 export const useCustomerReview = (customerId, options = {}) => {
   return useQuery({
@@ -670,3 +676,54 @@ export const useUpdateCustomerInflowFees = () => {
     },
   });
 };
+
+
+// Get transaction filter options (types, statuses, products)
+export const useTransactionFilterOptions = (options = {}) => {
+  return useQuery({
+    queryKey: [CUSTOMERS_QUERY_KEYS.CUSTOMERS, 'transaction-filter-options'],
+    queryFn: async () => {
+      const response = await apiService.get('/customers/transactions/filter-options');
+      return response;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes - these rarely change
+    gcTime: 30 * 60 * 1000,
+    ...options,
+  });
+};
+
+//Export transactions mutation
+export const useExportTransactions = () => {
+  return useMutation({
+    mutationFn: async (filters = {}) => {
+      const hasValue = (v) => v != null && String(v).trim() !== '';
+      const {
+        customerId, search, customerTypeCode, startDate, endDate,
+        productId, type, direction, status, minAmount, maxAmount,
+      } = filters;
+
+      const params = {
+        ...(hasValue(customerId)       && { customerId }),
+        ...(hasValue(search)           && { search }),
+        ...(hasValue(customerTypeCode) && { customerTypeCode }),
+        ...(hasValue(startDate)        && { startDate }),
+        ...(hasValue(endDate)          && { endDate }),
+        ...(hasValue(productId)        && { productId }),
+        ...(hasValue(type)             && { type }),
+        ...(hasValue(direction)        && { direction }),
+        ...(hasValue(status)           && { status }),
+        ...(hasValue(minAmount)        && { minAmount }),
+        ...(hasValue(maxAmount)        && { maxAmount }),
+      };
+
+      const response = await apiService.get('/customers/transactions/export', params, {
+        responseType: 'blob',
+      });
+      return response;
+    },
+    onError: (error) => {
+      console.error('Failed to export transactions:', error);
+    },
+  });
+};
+

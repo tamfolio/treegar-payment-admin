@@ -1,93 +1,69 @@
-import React, { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useCustomers, usePrefetchCustomerProfile } from '../../hooks/customerHooks';
+
+const StatusBadge = ({ status, type = 'status' }) => {
+  const map = {
+    status:      { active: 'bg-green-100 text-green-800', inactive: 'bg-red-100 text-red-800', suspended: 'bg-yellow-100 text-yellow-800' },
+    kyc:         { verified: 'bg-green-100 text-green-800', pending: 'bg-yellow-100 text-yellow-800', rejected: 'bg-red-100 text-red-800' },
+    onboarding:  { approved: 'bg-green-100 text-green-800', pending: 'bg-yellow-100 text-yellow-800', rejected: 'bg-red-100 text-red-800' },
+  };
+  if (!status) return <span className="text-gray-300 text-xs">—</span>;
+  const cls = (map[type]?.[status.toLowerCase()]) || 'bg-gray-100 text-gray-600';
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
+      {status}
+    </span>
+  );
+};
+
+const formatCurrency = (v) =>
+  v != null ? new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(v) : '—';
+
+const formatDate = (v) => v ? new Date(v).toLocaleDateString() : '—';
+
+const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent';
+const labelCls = 'block text-xs font-medium text-gray-600 mb-1';
+
+const EMPTY_FILTERS = {
+  search: '',
+  companyId: '',
+  customerTypeId: '',
+  status: '',
+  kycStatus: '',
+  onboardingStatus: '',
+  createdFrom: '',
+  createdTo: '',
+  pageNumber: 1,
+  pageSize: 20,
+};
+
+const COLUMNS = [
+  'Customer', 'Tag', 'Type', 'Company',
+  'Email', 'Phone', 'Status', 'KYC', 'Onboarding',
+  'Modes', 'Wallets', 'Balance',
+  'Deposits', 'Withdrawals', 'Interest Paid',
+  'Last Txn', 'Created', 'Actions',
+];
 
 const Customers = () => {
   const navigate = useNavigate();
   const prefetchCustomerProfile = usePrefetchCustomerProfile();
 
-  // Filter states
-  const [filters, setFilters] = useState({
-    search: '',
-    companyId: '',
-    customerTypeId: '',
-    status: '',
-    kycStatus: '',
-    onboardingStatus: '',
-    createdFrom: '',
-    createdTo: '',
-    pageNumber: 1,
-    pageSize: 20,
-  });
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
 
-  // Fetch customers data
-  const { 
-    data: customersResponse, 
-    isLoading, 
-    error, 
-    isFetching 
-  } = useCustomers(filters);
+  const { data: customersResponse, isLoading, error, isFetching } = useCustomers(filters);
 
   const customers = customersResponse?.data?.items || [];
-  const totalCustomers = customersResponse?.data?.total || 0;
-  const totalPages = Math.ceil(totalCustomers / filters.pageSize);
+  const pg = customersResponse?.data?.pagination || {};
 
-  // Handle filter changes
-  const handleFilterChange = (field, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: value,
-      pageNumber: 1, // Reset to first page when filtering
-    }));
-  };
+  const set = (field, value) =>
+    setFilters(prev => ({ ...prev, [field]: value, pageNumber: 1 }));
 
-  // Handle pagination
-  const handlePageChange = (newPage) => {
-    setFilters(prev => ({
-      ...prev,
-      pageNumber: newPage,
-    }));
-  };
-
-  // Handle customer row click with prefetching
-  const handleCustomerClick = (customerId) => {
-    prefetchCustomerProfile(customerId);
-    navigate(`/banking/customers/${customerId}`);
-  };
-
-  // Status badge component
-  const StatusBadge = ({ status, type = 'status' }) => {
-    const getStatusColor = (status, type) => {
-      if (type === 'kyc') {
-        switch (status?.toLowerCase()) {
-          case 'verified': return 'bg-green-100 text-green-800';
-          case 'pending': return 'bg-yellow-100 text-yellow-800';
-          case 'rejected': return 'bg-red-100 text-red-800';
-          default: return 'bg-gray-100 text-gray-800';
-        }
-      } else if (type === 'onboarding') {
-        switch (status?.toLowerCase()) {
-          case 'approved': return 'bg-green-100 text-green-800';
-          case 'pending': return 'bg-yellow-100 text-yellow-800';
-          case 'rejected': return 'bg-red-100 text-red-800';
-          default: return 'bg-gray-100 text-gray-800';
-        }
-      } else {
-        switch (status?.toLowerCase()) {
-          case 'active': return 'bg-green-100 text-green-800';
-          case 'inactive': return 'bg-red-100 text-red-800';
-          case 'suspended': return 'bg-yellow-100 text-yellow-800';
-          default: return 'bg-gray-100 text-gray-800';
-        }
-      }
-    };
-
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(status, type)}`}>
-        {status}
-      </span>
-    );
+  const goToCustomer = (id) => {
+    prefetchCustomerProfile(id);
+    navigate(`/banking/customers/${id}`);
   };
 
   return (
@@ -96,105 +72,83 @@ const Customers = () => {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Banking Customers</h1>
-          <p className="text-gray-600 mt-2">Manage banking customer accounts and information</p>
+          <p className="text-gray-500 text-sm mt-1">Manage banking customer accounts and information</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Filters</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search
-              </label>
+        <div className="bg-white rounded-lg shadow p-5 mb-6">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Filters</h3>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {/* Search — exact match on code, tag, email, phone; partial on name fields */}
+            <div className="xl:col-span-2">
+              <label className={labelCls}>Search <span className="text-gray-400 font-normal">(code, tag, email, phone, name)</span></label>
               <input
                 type="text"
                 value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                placeholder="Search customers..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                onChange={e => set('search', e.target.value)}
+                placeholder="Code, tag, email, phone, name…"
+                className={inputCls}
               />
             </div>
 
-            {/* Customer Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Customer Type
-              </label>
-              <select
-                value={filters.customerTypeId}
-                onChange={(e) => handleFilterChange('customerTypeId', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">All Types</option>
+              <label className={labelCls}>Customer Type</label>
+              <select value={filters.customerTypeId} onChange={e => set('customerTypeId', e.target.value)} className={inputCls}>
+                <option value="">All</option>
                 <option value="1">Individual</option>
                 <option value="2">Business</option>
               </select>
             </div>
 
-            {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                value={filters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">All Statuses</option>
+              <label className={labelCls}>Status</label>
+              <select value={filters.status} onChange={e => set('status', e.target.value)} className={inputCls}>
+                <option value="">All</option>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
                 <option value="Suspended">Suspended</option>
               </select>
             </div>
 
-            {/* KYC Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                KYC Status
-              </label>
-              <select
-                value={filters.kycStatus}
-                onChange={(e) => handleFilterChange('kycStatus', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">All KYC Statuses</option>
+              <label className={labelCls}>KYC Status</label>
+              <select value={filters.kycStatus} onChange={e => set('kycStatus', e.target.value)} className={inputCls}>
+                <option value="">All</option>
                 <option value="Verified">Verified</option>
                 <option value="Pending">Pending</option>
                 <option value="Rejected">Rejected</option>
               </select>
             </div>
 
-            {/* Onboarding Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Onboarding Status
-              </label>
-              <select
-                value={filters.onboardingStatus}
-                onChange={(e) => handleFilterChange('onboardingStatus', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">All Onboarding</option>
+              <label className={labelCls}>Onboarding Status</label>
+              <select value={filters.onboardingStatus} onChange={e => set('onboardingStatus', e.target.value)} className={inputCls}>
+                <option value="">All</option>
                 <option value="Approved">Approved</option>
                 <option value="Pending">Pending</option>
                 <option value="Rejected">Rejected</option>
               </select>
             </div>
 
-            {/* Page Size */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Items per page
-              </label>
-              <select
-                value={filters.pageSize}
-                onChange={(e) => handleFilterChange('pageSize', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
+              <label className={labelCls}>Company ID</label>
+              <input type="number" value={filters.companyId} onChange={e => set('companyId', e.target.value)} placeholder="Company ID" className={inputCls} />
+            </div>
+
+            <div>
+              <label className={labelCls}>Created From</label>
+              <input type="date" value={filters.createdFrom} onChange={e => set('createdFrom', e.target.value)} className={inputCls} />
+            </div>
+
+            <div>
+              <label className={labelCls}>Created To</label>
+              <input type="date" value={filters.createdTo} onChange={e => set('createdTo', e.target.value)} className={inputCls} />
+            </div>
+
+            <div>
+              <label className={labelCls}>Per Page</label>
+              <select value={filters.pageSize} onChange={e => set('pageSize', parseInt(e.target.value))} className={inputCls}>
                 <option value="20">20</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
@@ -202,167 +156,152 @@ const Customers = () => {
             </div>
           </div>
 
-          {/* Clear Filters */}
-          <div className="mt-4">
-            <button
-              onClick={() => setFilters({
-                search: '',
-                companyId: '',
-                customerTypeId: '',
-                status: '',
-                kycStatus: '',
-                onboardingStatus: '',
-                createdFrom: '',
-                createdTo: '',
-                pageNumber: 1,
-                pageSize: 20,
-              })}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
-            >
+          <div className="mt-4 flex items-center justify-between">
+            <button onClick={() => setFilters(EMPTY_FILTERS)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
               Clear Filters
             </button>
+            {isFetching && (
+              <span className="flex items-center text-xs text-gray-400">
+                <svg className="animate-spin mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Refreshing…
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Results Summary */}
-        <div className="mb-4 flex justify-between items-center">
-          <p className="text-sm text-gray-700">
-            Showing {((filters.pageNumber - 1) * filters.pageSize) + 1} to {Math.min(filters.pageNumber * filters.pageSize, totalCustomers)} of {totalCustomers} results
+        {/* Summary bar */}
+        <div className="mb-3">
+          <p className="text-sm text-gray-600">
+            {pg.total > 0
+              ? `Page ${pg.currentPage} of ${pg.totalPages} — ${pg.total} customers`
+              : !isLoading ? 'No customers found' : ''}
           </p>
-          {isFetching && (
-            <div className="flex items-center text-sm text-gray-500">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Loading...
-            </div>
-          )}
         </div>
 
-        {/* Error State */}
+        {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex">
-              <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Error loading customers</h3>
-                <p className="text-sm text-red-700 mt-1">{error?.message || 'An error occurred'}</p>
-              </div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 flex items-start">
+            <svg className="h-5 w-5 text-red-400 mr-3 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium text-red-800">Error loading customers</p>
+              <p className="text-xs text-red-600 mt-0.5">{error?.message || 'An unexpected error occurred.'}</p>
             </div>
           </div>
         )}
 
-        {/* Customers Table */}
+        {/* Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 text-sm whitespace-nowrap">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    KYC Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Onboarding
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  {COLUMNS.map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {isLoading ? (
-                  // Loading skeleton
-                  Array.from({ length: 5 }).map((_, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="animate-pulse flex space-x-4">
-                          <div className="flex-1 space-y-2 py-1">
-                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                          </div>
-                        </div>
-                      </td>
-                      <td colSpan="7" className="px-6 py-4">
-                        <div className="animate-pulse h-4 bg-gray-200 rounded"></div>
-                      </td>
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <tr key={i}>
+                      {COLUMNS.map((_, j) => (
+                        <td key={j} className="px-4 py-3">
+                          <div className="animate-pulse h-3 bg-gray-200 rounded w-16" />
+                        </td>
+                      ))}
                     </tr>
                   ))
                 ) : customers.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-12 text-center">
-                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <td colSpan={COLUMNS.length} className="px-6 py-16 text-center">
+                      <svg className="mx-auto h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <h3 className="mt-4 text-lg font-medium text-gray-900">No customers found</h3>
-                      <p className="mt-2 text-sm text-gray-500">
-                        Try adjusting your search filters or check back later.
-                      </p>
+                      <p className="mt-3 text-sm font-medium text-gray-500">No customers found</p>
+                      <p className="text-xs text-gray-400 mt-1">Try adjusting your filters.</p>
                     </td>
                   </tr>
                 ) : (
-                  customers.map((customer) => (
+                  customers.map(c => (
                     <tr
-                      key={customer.id}
-                      onClick={() => handleCustomerClick(customer.id)}
-                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                      key={c.id}
+                      onClick={() => goToCustomer(c.id)}
+                      className="hover:bg-gray-50 cursor-pointer transition-colors align-top"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {customer.businessName || `${customer.firstName} ${customer.lastName}`}
-                            </div>
-                            <div className="text-sm text-gray-500">{customer.customerCode}</div>
-                            <div className="text-xs text-gray-400">{customer.tag}</div>
-                          </div>
+                      {/* 1. Customer */}
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900 max-w-[180px] truncate">
+                          {c.businessName || `${c.firstName} ${c.lastName}`}
                         </div>
+                        <div className="text-xs text-gray-500">{c.customerCode}</div>
+                        <div className="text-xs text-gray-400">ID: {c.id}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {customer.customerType}
+
+                      {/* 2. Tag */}
+                      <td className="px-4 py-3 text-xs text-blue-500 font-medium">{c.tag || '—'}</td>
+
+                      {/* 3. Type */}
+                      <td className="px-4 py-3 text-xs text-gray-700">{c.customerType || '—'}</td>
+
+                      {/* 4. Company */}
+                      <td className="px-4 py-3 text-xs text-gray-600 max-w-[120px] truncate">{c.companyName || '—'}</td>
+
+                      {/* 5. Email */}
+                      <td className="px-4 py-3 text-xs text-gray-600 max-w-[160px] truncate">{c.email || '—'}</td>
+
+                      {/* 6. Phone */}
+                      <td className="px-4 py-3 text-xs text-gray-600">{c.phoneNumber || '—'}</td>
+
+                      {/* 7. Status */}
+                      <td className="px-4 py-3"><StatusBadge status={c.status} type="status" /></td>
+
+                      {/* 8. KYC */}
+                      <td className="px-4 py-3"><StatusBadge status={c.kycStatus} type="kyc" /></td>
+
+                      {/* 9. Onboarding */}
+                      <td className="px-4 py-3"><StatusBadge status={c.onboardingStatus} type="onboarding" /></td>
+
+                      {/* 10. Modes */}
+                      <td className="px-4 py-3">
+                        <div className="text-xs text-gray-500">Onboard: <span className="text-gray-700">{c.onboardingMode || '—'}</span></div>
+                        <div className="text-xs text-gray-500">Payout: <span className="text-gray-700">{c.payoutMode || '—'}</span></div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{customer.email}</div>
-                        <div className="text-sm text-gray-500">{customer.phoneNumber}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={customer.status} />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={customer.kycStatus} type="kyc" />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={customer.onboardingStatus} type="onboarding" />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(customer.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+
+                      {/* 11. Wallets */}
+                      <td className="px-4 py-3 text-xs text-gray-700 text-center">{c.walletCount ?? '—'}</td>
+
+                      {/* 12. Balance */}
+                      <td className="px-4 py-3 text-xs font-semibold text-gray-800">{formatCurrency(c.totalWalletBalance)}</td>
+
+                      {/* 13. Deposits */}
+                      <td className="px-4 py-3 text-xs text-green-700 font-medium">{formatCurrency(c.totalDeposits)}</td>
+
+                      {/* 14. Withdrawals */}
+                      <td className="px-4 py-3 text-xs text-red-600 font-medium">{formatCurrency(c.totalWithdrawals)}</td>
+
+                      {/* 15. Interest Paid */}
+                      <td className="px-4 py-3 text-xs text-blue-600 font-medium">{formatCurrency(c.totalInterestPaid)}</td>
+
+                      {/* 16. Last Txn */}
+                      <td className="px-4 py-3 text-xs text-gray-500">{formatDate(c.lastTransactionDate)}</td>
+
+                      {/* 17. Created */}
+                      <td className="px-4 py-3 text-xs text-gray-500">{formatDate(c.createdAt)}</td>
+
+                      {/* 18. Actions */}
+                      <td className="px-4 py-3">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCustomerClick(customer.id);
-                          }}
-                          className="text-primary hover:text-primary-dark"
+                          onClick={e => { e.stopPropagation(); goToCustomer(c.id); }}
+                          className="text-xs font-medium text-primary hover:underline"
                         >
-                          View Details
+                          View
                         </button>
                       </td>
                     </tr>
@@ -373,85 +312,53 @@ const Customers = () => {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-              <div className="flex-1 flex justify-between sm:hidden">
+          {pg.totalPages > 1 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+              <p className="text-sm text-gray-600">
+                Page <span className="font-medium">{pg.currentPage}</span> of{' '}
+                <span className="font-medium">{pg.totalPages}</span>
+              </p>
+              <nav className="inline-flex rounded-md shadow-sm -space-x-px">
                 <button
-                  onClick={() => handlePageChange(Math.max(1, filters.pageNumber - 1))}
-                  disabled={filters.pageNumber === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setFilters(p => ({ ...p, pageNumber: p.pageNumber - 1 }))}
+                  disabled={!pg.hasPrevPage}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Previous
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
                 </button>
+                {Array.from({ length: Math.min(5, pg.totalPages) }, (_, i) => {
+                  const cur = filters.pageNumber, tot = pg.totalPages;
+                  let p;
+                  if (tot <= 5) p = i + 1;
+                  else if (cur <= 3) p = i + 1;
+                  else if (cur >= tot - 2) p = tot - 4 + i;
+                  else p = cur - 2 + i;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setFilters(prev => ({ ...prev, pageNumber: p }))}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                        filters.pageNumber === p
+                          ? 'z-10 bg-primary border-primary text-white'
+                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
                 <button
-                  onClick={() => handlePageChange(Math.min(totalPages, filters.pageNumber + 1))}
-                  disabled={filters.pageNumber === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setFilters(p => ({ ...p, pageNumber: p.pageNumber + 1 }))}
+                  disabled={!pg.hasNextPage}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Next
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Showing page <span className="font-medium">{filters.pageNumber}</span> of{' '}
-                    <span className="font-medium">{totalPages}</span>
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => handlePageChange(Math.max(1, filters.pageNumber - 1))}
-                      disabled={filters.pageNumber === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span className="sr-only">Previous</span>
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    
-                    {/* Page numbers */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (filters.pageNumber <= 3) {
-                        pageNum = i + 1;
-                      } else if (filters.pageNumber >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = filters.pageNumber - 2 + i;
-                      }
-
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => handlePageChange(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            filters.pageNumber === pageNum
-                              ? 'z-10 bg-primary border-primary text-white'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-
-                    <button
-                      onClick={() => handlePageChange(Math.min(totalPages, filters.pageNumber + 1))}
-                      disabled={filters.pageNumber === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span className="sr-only">Next</span>
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </nav>
-                </div>
-              </div>
+              </nav>
             </div>
           )}
         </div>
