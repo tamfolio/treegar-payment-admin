@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
-import { useCustomerTransactions } from '../../hooks/customerHooks';
+import { useCustomerTransactions, useTransactionFilterOptions, useExportTransactions } from '../../hooks/customerHooks';
 
 const StatusBadge = ({ status }) => {
   const colors = {
@@ -39,6 +39,38 @@ const DirectionBadge = ({ direction }) => {
 
 const Val = ({ v }) => (v != null && v !== '') ? <>{v}</> : <span className="text-gray-300">—</span>;
 
+const CopyCell = ({ value, mono = false }) => {
+  const [copied, setCopied] = useState(false);
+  if (!value) return <span className="text-gray-300">—</span>;
+
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 min-w-[160px] max-w-[260px]">
+      <span className={`flex-1 text-xs text-gray-700 truncate ${mono ? 'font-mono' : ''}`} title={value}>
+        {value}
+      </span>
+      <button onClick={handleCopy} title={copied ? 'Copied!' : 'Copy'} className="flex-shrink-0 text-gray-300 hover:text-gray-500 transition-colors">
+        {copied ? (
+          <svg className="h-3.5 w-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        ) : (
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+};
+
 const COLUMNS = [
   'Customer Name', 'Code / Tag', 'Email', 'Phone',
   'Cust. Status', 'KYC Status', 'Cust. Type', 'Company',
@@ -52,7 +84,7 @@ const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-md text-sm foc
 const labelCls = 'block text-xs font-medium text-gray-600 mb-1';
 
 const EMPTY_FILTERS = {
-  search: '',
+  reference: '',
   customerId: '',
   customerTypeCode: '',
   type: '',
@@ -71,9 +103,15 @@ const BankingTransactions = () => {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
   const { data: transactionsResponse, isLoading, error, isFetching } = useCustomerTransactions(filters);
+  const { data: filterOptionsResponse } = useTransactionFilterOptions();
+  const exportMutation = useExportTransactions();
 
   const transactions = transactionsResponse?.data?.items || [];
   const pg = transactionsResponse?.data?.pagination || {};
+  const filterOptions = filterOptionsResponse?.data || {};
+  const typeOptions = filterOptions.types || [];
+  const statusOptions = filterOptions.statuses || [];
+  const productOptions = filterOptions.products || [];
 
   const set = (field, value) =>
     setFilters(prev => ({ ...prev, [field]: value, pageNumber: 1 }));
@@ -83,12 +121,27 @@ const BankingTransactions = () => {
 
   const formatDate = (v) => v ? new Date(v).toLocaleString() : '—';
 
-  // Summary counts from current page
+  const handleExport = async () => {
+    try {
+      const blob = await exportMutation.mutateAsync(filters);
+      const url = window.URL.createObjectURL(blob instanceof Blob ? blob : new Blob([blob]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transactions-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      // handled by mutation's onError
+    }
+  };
+
   const summary = transactions.reduce(
     (acc, tx) => {
       acc.total++;
       const s = tx.status?.toLowerCase();
-      if (s === 'success' || s === 'completed') acc.successful++;
+      if (s === 'success' || s === 'completed' || s === 'successful') acc.successful++;
       else if (s === 'pending' || s === 'processing') acc.pending++;
       else if (s === 'failed' || s === 'cancelled' || s === 'canceled') acc.failed++;
       return acc;
@@ -110,8 +163,8 @@ const BankingTransactions = () => {
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Filters</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
             <div>
-              <label className={labelCls}>Search</label>
-              <input type="text" value={filters.search} onChange={e => set('search', e.target.value)} placeholder="Reference, narration…" className={inputCls} />
+              <label className={labelCls}>Reference</label>
+              <input type="text" value={filters.reference} onChange={e => set('reference', e.target.value)} placeholder="Search by reference…" className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Customer ID</label>
@@ -129,9 +182,10 @@ const BankingTransactions = () => {
               <label className={labelCls}>Txn Type</label>
               <select value={filters.type} onChange={e => set('type', e.target.value)} className={inputCls}>
                 <option value="">All</option>
-                <option value="Funding">Funding</option>
-                <option value="Payout">Payout</option>
-                <option value="P2P">P2P</option>
+                {typeOptions.length > 0
+                  ? typeOptions.map(t => <option key={t} value={t}>{t}</option>)
+                  : <><option value="Funding">Funding</option><option value="Payout">Payout</option><option value="P2P">P2P</option></>
+                }
               </select>
             </div>
             <div>
@@ -146,12 +200,10 @@ const BankingTransactions = () => {
               <label className={labelCls}>Status</label>
               <select value={filters.status} onChange={e => set('status', e.target.value)} className={inputCls}>
                 <option value="">All</option>
-                <option value="Pending">Pending</option>
-                <option value="Processing">Processing</option>
-                <option value="Success">Success</option>
-                <option value="Failed">Failed</option>
-                <option value="Cancelled">Cancelled</option>
-                <option value="Reversed">Reversed</option>
+                {statusOptions.length > 0
+                  ? statusOptions.map(s => <option key={s.id} value={s.name}>{s.name}</option>)
+                  : <><option value="Pending">Pending</option><option value="Processing">Processing</option><option value="Success">Success</option><option value="Failed">Failed</option><option value="Cancelled">Cancelled</option><option value="Reversed">Reversed</option></>
+                }
               </select>
             </div>
             <div>
@@ -163,8 +215,11 @@ const BankingTransactions = () => {
               <input type="date" value={filters.endDate} onChange={e => set('endDate', e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className={labelCls}>Product ID</label>
-              <input type="number" value={filters.productId} onChange={e => set('productId', e.target.value)} placeholder="Product ID" className={inputCls} />
+              <label className={labelCls}>Product</label>
+              <select value={filters.productId} onChange={e => set('productId', e.target.value)} className={inputCls}>
+                <option value="">All</option>
+                {productOptions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
             </div>
             <div>
               <label className={labelCls}>Min Amount</label>
@@ -202,7 +257,7 @@ const BankingTransactions = () => {
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[
-            { label: 'Total (this page)', value: pg.total ?? 0, color: 'blue', icon: 'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
+            { label: 'Total', value: pg.total ?? 0, color: 'blue', icon: 'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
             { label: 'Successful', value: summary.successful, color: 'green', icon: 'M5 13l4 4L19 7' },
             { label: 'Pending', value: summary.pending, color: 'yellow', icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
             { label: 'Failed', value: summary.failed, color: 'red', icon: 'M6 18L18 6M6 6l12 12' },
@@ -234,13 +289,35 @@ const BankingTransactions = () => {
           </div>
         )}
 
-        {/* Summary bar */}
+        {/* Summary bar + Export */}
         <div className="mb-3 flex justify-between items-center">
           <p className="text-sm text-gray-600">
             {pg.total > 0
               ? `Page ${pg.currentPage} of ${pg.totalPages} — ${pg.total} total transactions`
               : !isLoading ? 'No transactions found' : ''}
           </p>
+          <button
+            onClick={handleExport}
+            disabled={exportMutation.isPending}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {exportMutation.isPending ? (
+              <>
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Exporting…
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export CSV
+              </>
+            )}
+          </button>
         </div>
 
         {/* Table */}
@@ -280,89 +357,36 @@ const BankingTransactions = () => {
                 ) : (
                   transactions.map(tx => (
                     <tr key={tx.id} className="hover:bg-gray-50 align-top">
-                      {/* 1. Customer Name */}
-                      <td className="px-4 py-3 font-medium text-gray-900 max-w-[140px] truncate">
-                        <Val v={tx.customerName} />
-                      </td>
-                      {/* 2. Code / Tag */}
+                      <td className="px-4 py-3 font-medium text-gray-900 max-w-[140px] truncate"><Val v={tx.customerName} /></td>
                       <td className="px-4 py-3">
-                        <Link to={`/banking/customers/${tx.customerId}`} className="text-xs font-medium text-blue-600 hover:underline block">
-                          <Val v={tx.customerCode} />
-                        </Link>
+                        <Link to={`/banking/customers/${tx.customerId}`} className="text-xs font-medium text-blue-600 hover:underline block"><Val v={tx.customerCode} /></Link>
                         <div className="text-xs text-blue-400"><Val v={tx.customerTag} /></div>
                       </td>
-                      {/* 3. Email */}
-                      <td className="px-4 py-3 text-xs text-gray-600 max-w-[160px] truncate">
-                        <Val v={tx.customerEmail} />
-                      </td>
-                      {/* 4. Phone */}
-                      <td className="px-4 py-3 text-xs text-gray-600">
-                        <Val v={tx.customerPhoneNumber} />
-                      </td>
-                      {/* 5. Customer Status */}
+                      <td className="px-4 py-3 text-xs text-gray-600 max-w-[160px] truncate"><Val v={tx.customerEmail} /></td>
+                      <td className="px-4 py-3 text-xs text-gray-600"><Val v={tx.customerPhoneNumber} /></td>
                       <td className="px-4 py-3"><StatusBadge status={tx.customerStatus} /></td>
-                      {/* 6. KYC Status */}
                       <td className="px-4 py-3"><StatusBadge status={tx.customerKycStatus} /></td>
-                      {/* 7. Customer Type */}
                       <td className="px-4 py-3 text-xs text-gray-700"><Val v={tx.customerType} /></td>
-                      {/* 8. Company */}
-                      <td className="px-4 py-3 text-xs text-gray-600 max-w-[120px] truncate">
-                        <Val v={tx.companyName} />
-                      </td>
-                      {/* 9. Wallet ID */}
-                      <td className="px-4 py-3 text-xs text-gray-700">
-                        {tx.walletId ?? <span className="text-gray-300">—</span>}
-                      </td>
-                      {/* 10. Product ID */}
-                      <td className="px-4 py-3 text-xs text-gray-700">
-                        {tx.productId ?? <span className="text-gray-300">—</span>}
-                      </td>
-                      {/* 11. Txn Type */}
+                      <td className="px-4 py-3 text-xs text-gray-600 max-w-[120px] truncate"><Val v={tx.companyName} /></td>
+                      <td className="px-4 py-3 text-xs text-gray-700">{tx.walletId ?? <span className="text-gray-300">—</span>}</td>
+                      <td className="px-4 py-3 text-xs text-gray-700">{tx.productId ?? <span className="text-gray-300">—</span>}</td>
                       <td className="px-4 py-3 text-sm text-gray-800"><Val v={tx.type} /></td>
-                      {/* 12. Direction */}
                       <td className="px-4 py-3"><DirectionBadge direction={tx.direction} /></td>
-                      {/* 13. Amount */}
                       <td className={`px-4 py-3 text-sm font-semibold ${tx.direction?.toLowerCase() === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(tx.amount)}
                       </td>
-                      {/* 14. Fee */}
-                      <td className="px-4 py-3 text-xs text-gray-500">
-                        {tx.feeAmount != null ? formatCurrency(tx.feeAmount) : '—'}
+                      <td className="px-4 py-3 text-xs text-gray-500">{tx.feeAmount != null ? formatCurrency(tx.feeAmount) : '—'}</td>
+                      <td className="px-4 py-3">
+                        <CopyCell value={tx.reference} mono />
+                        <div className="text-xs text-gray-400 mt-0.5">ID: {tx.id}</div>
                       </td>
-                      {/* 15. Reference */}
-                      <td className="px-4 py-3 max-w-[180px]">
-                        <div className="font-mono text-xs text-gray-700 truncate" title={tx.reference}>
-                          <Val v={tx.reference} />
-                        </div>
-                        <div className="text-xs text-gray-400">ID: {tx.id}</div>
-                      </td>
-                      {/* 16. Provider Ref */}
-                      <td className="px-4 py-3 max-w-[160px]">
-                        <div className="font-mono text-xs text-gray-500 truncate" title={tx.providerReference}>
-                          {tx.providerReference || <span className="text-gray-300">—</span>}
-                        </div>
-                      </td>
-                      {/* 17. Provider */}
+                      <td className="px-4 py-3"><CopyCell value={tx.providerReference} mono /></td>
                       <td className="px-4 py-3 text-xs text-gray-600"><Val v={tx.provider} /></td>
-                      {/* 18. Bank Name */}
-                      <td className="px-4 py-3 text-xs text-gray-700 max-w-[130px] truncate">
-                        <Val v={tx.bankName} />
-                      </td>
-                      {/* 19. Acct Number */}
+                      <td className="px-4 py-3 text-xs text-gray-700 max-w-[130px] truncate"><Val v={tx.bankName} /></td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-700"><Val v={tx.accountNumber} /></td>
-                      {/* 20. Acct Name */}
-                      <td className="px-4 py-3 text-xs text-gray-700 max-w-[130px] truncate">
-                        <Val v={tx.accountName} />
-                      </td>
-                      {/* 21. Narration */}
-                      <td className="px-4 py-3 max-w-[200px]">
-                        <div className="text-xs text-gray-500 truncate" title={tx.narration}>
-                          <Val v={tx.narration} />
-                        </div>
-                      </td>
-                      {/* 22. Status */}
+                      <td className="px-4 py-3 text-xs text-gray-700 max-w-[130px] truncate"><Val v={tx.accountName} /></td>
+                      <td className="px-4 py-3"><CopyCell value={tx.narration} /></td>
                       <td className="px-4 py-3"><StatusBadge status={tx.status} /></td>
-                      {/* 23. Date */}
                       <td className="px-4 py-3 text-xs text-gray-500">{formatDate(tx.createdAt)}</td>
                     </tr>
                   ))

@@ -208,7 +208,7 @@ export const useCustomerStats = (filters = {}) => {
 export const useCustomerTransactions = (filters = {}, options = {}) => {
   const {
     customerId,
-    search = '',
+    reference = '',
     customerTypeCode = '',
     startDate = '',
     endDate = '',
@@ -225,7 +225,7 @@ export const useCustomerTransactions = (filters = {}, options = {}) => {
   return useQuery({
     queryKey: [CUSTOMERS_QUERY_KEYS.CUSTOMERS, 'transactions', {
       customerId,
-      search,
+      reference,
       customerTypeCode,
       startDate,
       endDate,
@@ -244,7 +244,7 @@ export const useCustomerTransactions = (filters = {}, options = {}) => {
 
       const params = {
         ...(hasValue(customerId)     && { customerId }),
-        ...(hasValue(search)         && { search }),
+        ...(hasValue(reference)         && { reference }),
         ...(hasValue(customerTypeCode) && { customerTypeCode }),
         ...(hasValue(startDate)      && { startDate }),
         ...(hasValue(endDate)        && { endDate }),
@@ -698,13 +698,13 @@ export const useExportTransactions = () => {
     mutationFn: async (filters = {}) => {
       const hasValue = (v) => v != null && String(v).trim() !== '';
       const {
-        customerId, search, customerTypeCode, startDate, endDate,
+        customerId, reference, customerTypeCode, startDate, endDate,
         productId, type, direction, status, minAmount, maxAmount,
       } = filters;
 
       const params = {
         ...(hasValue(customerId)       && { customerId }),
-        ...(hasValue(search)           && { search }),
+        ...(hasValue(reference)           && { reference }),
         ...(hasValue(customerTypeCode) && { customerTypeCode }),
         ...(hasValue(startDate)        && { startDate }),
         ...(hasValue(endDate)          && { endDate }),
