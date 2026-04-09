@@ -137,7 +137,7 @@ const GlobalInflowFees = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
                       <div className="text-2xl font-bold text-blue-600">
-                        {(globalFees.percentage * 100).toFixed(2)}%
+                        {(globalFees.percentage).toFixed(2)}%
                       </div>
                       <div className="text-sm text-blue-800 font-medium">Fee Percentage</div>
                     </div>
