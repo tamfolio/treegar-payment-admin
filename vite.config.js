@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://treegar-accounts-api.treegar.com:8443/api/Admin',
+        target: 'https://treegar-admin-api.treegar.com:8444/api/Admin',
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api/, '/api')

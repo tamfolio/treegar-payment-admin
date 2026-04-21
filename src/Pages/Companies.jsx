@@ -251,8 +251,12 @@ const Companies = () => {
   const navigate = useNavigate();
 
   // Fetch companies data
-  const { data: companiesResponse, isLoading, isError, error, refetch, isFetching } = useCompaniesList();
-  const companies = companiesResponse?.data || [];
+const { data: companiesResponse, isLoading, isError, error, refetch, isFetching } = useCompaniesList();
+
+const companies = useMemo(
+  () => companiesResponse?.data?.items || [],
+  [companiesResponse]
+);
 
   // Format currency amounts
   const formatAmount = (amount, currency = "NGN") => {

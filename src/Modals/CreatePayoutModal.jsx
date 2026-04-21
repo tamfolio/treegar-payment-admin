@@ -35,7 +35,7 @@ const CreatePayoutModal = ({ isOpen, onClose, onSuccess }) => {
   const resolveAccountMutation = useResolveAccount();
   const createPayoutMutation = useCreateCompanyPayout();
 
-  const companies = companiesResponse?.data || [];
+  const companies = companiesResponse?.data?.items || [];
   const banks = banksResponse?.data || [];
   const companyOptions = formatCompanyOptions(companies);
 

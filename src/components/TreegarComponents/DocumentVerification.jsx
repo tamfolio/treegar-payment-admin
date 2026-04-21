@@ -99,7 +99,7 @@ const DocumentVerification = () => {
         
         try {
           // Create a proper authenticated request
-          const response = await fetch(`https://treegar-accounts-api.treegar.com:8443${document.fileUrl}`, {
+          const response = await fetch(`https://treegar-admin-api.treegar.com:8444${document.fileUrl}`, {
             headers: {
               'x-api-key': 'treegaristhePnce@@!!!9801',
               'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -121,7 +121,7 @@ const DocumentVerification = () => {
         }
       } else {
         // For non-images, try to open in new tab with auth headers (may not work due to CORS)
-        window.open(`https://treegar-accounts-api.treegar.com:8443${document.fileUrl}`, '_blank');
+        window.open(`https://treegar-admin-api.treegar.com:8444${document.fileUrl}`, '_blank');
       }
     };
 
