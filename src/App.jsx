@@ -12,6 +12,7 @@ import Login from "./Pages/Login";
 import OTP from "./Pages/Otp";
 import Dashboard from "./Pages/Dashboard";
 import AccountDetails from "./Pages/AccountDetails";
+import OutboundHook from "./Pages/OutboundHook";
 import Transactions from "./Pages/Transactions";
 import Payouts from "./Pages/Payouts";
 import Users from "./Pages/Users";
@@ -122,6 +123,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Companies />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/outbound-hook"
+              element={
+                <ProtectedRoute>
+                  <OutboundHook />
                 </ProtectedRoute>
               }
             />
