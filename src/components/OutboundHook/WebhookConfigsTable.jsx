@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWebhookConfigs, useDeleteWebhookConfig } from '../../hooks/outboundWebhookHooks';
 
 const StatusBadge = ({ isActive }) => (
@@ -12,6 +12,16 @@ const StatusBadge = ({ isActive }) => (
 
 const WebhookConfigsTable = ({ onEdit }) => {
   const [filters, setFilters] = useState({ isActive: undefined, eventType: '' });
+  const [eventTypeInput, setEventTypeInput] = useState('');
+
+  // Debounce event type filter
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters((f) => ({ ...f, eventType: eventTypeInput }));
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [eventTypeInput]);
+
   const { data, isLoading, isError } = useWebhookConfigs(
     Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== '' && v !== undefined))
   );
@@ -48,8 +58,8 @@ const WebhookConfigsTable = ({ onEdit }) => {
       {/* Filters */}
       <div className="px-6 py-4 border-b border-gray-200 flex flex-wrap gap-3 items-center">
         <input
-          value={filters.eventType}
-          onChange={(e) => setFilters((f) => ({ ...f, eventType: e.target.value }))}
+          value={eventTypeInput}
+          onChange={(e) => setEventTypeInput(e.target.value)}
           placeholder="Filter by event type..."
           className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-56"
         />
