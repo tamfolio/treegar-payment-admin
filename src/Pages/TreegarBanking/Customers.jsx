@@ -40,11 +40,11 @@ const EMPTY_FILTERS = {
 };
 
 const COLUMNS = [
-  'Customer', 'Tag', 'Type', 'Company',
-  'Email', 'Phone', 'Status', 'KYC', 'Onboarding',
-  'Modes', 'Wallets', 'Balance',
+  'Customer', 'Tag', 'Type', 'Balance',
   'Deposits', 'Withdrawals', 'Interest Paid',
-  'Last Txn', 'Created', 'Actions',
+  'Wallets', 'Last Txn', 'Company',
+  'Email', 'Phone', 'Status', 'Onboarding',
+  'KYC', 'Modes', 'Created', 'Actions',
 ];
 
 const Customers = () => {
@@ -80,7 +80,6 @@ const Customers = () => {
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Filters</h3>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {/* Search — exact match on code, tag, email, phone; partial on name fields */}
             <div className="xl:col-span-2">
               <label className={labelCls}>Search <span className="text-gray-400 font-normal">(code, tag, email, phone, name)</span></label>
               <input
@@ -250,47 +249,47 @@ const Customers = () => {
                       {/* 3. Type */}
                       <td className="px-4 py-3 text-xs text-gray-700">{c.customerType || '—'}</td>
 
-                      {/* 4. Company */}
+                      {/* 4. Balance */}
+                      <td className="px-4 py-3 text-xs font-semibold text-gray-800">{formatCurrency(c.totalWalletBalance)}</td>
+
+                      {/* 5. Deposits */}
+                      <td className="px-4 py-3 text-xs text-green-700 font-medium">{formatCurrency(c.totalDeposits)}</td>
+
+                      {/* 6. Withdrawals */}
+                      <td className="px-4 py-3 text-xs text-red-600 font-medium">{formatCurrency(c.totalWithdrawals)}</td>
+
+                      {/* 7. Interest Paid */}
+                      <td className="px-4 py-3 text-xs text-blue-600 font-medium">{formatCurrency(c.totalInterestPaid)}</td>
+
+                      {/* 8. Wallets */}
+                      <td className="px-4 py-3 text-xs text-gray-700 text-center">{c.walletCount ?? '—'}</td>
+
+                      {/* 9. Last Txn */}
+                      <td className="px-4 py-3 text-xs text-gray-500">{formatDate(c.lastTransactionDate)}</td>
+
+                      {/* 10. Company */}
                       <td className="px-4 py-3 text-xs text-gray-600 max-w-[120px] truncate">{c.companyName || '—'}</td>
 
-                      {/* 5. Email */}
+                      {/* 11. Email */}
                       <td className="px-4 py-3 text-xs text-gray-600 max-w-[160px] truncate">{c.email || '—'}</td>
 
-                      {/* 6. Phone */}
+                      {/* 12. Phone */}
                       <td className="px-4 py-3 text-xs text-gray-600">{c.phoneNumber || '—'}</td>
 
-                      {/* 7. Status */}
+                      {/* 13. Status */}
                       <td className="px-4 py-3"><StatusBadge status={c.status} type="status" /></td>
 
-                      {/* 8. KYC */}
-                      <td className="px-4 py-3"><StatusBadge status={c.kycStatus} type="kyc" /></td>
-
-                      {/* 9. Onboarding */}
+                      {/* 14. Onboarding */}
                       <td className="px-4 py-3"><StatusBadge status={c.onboardingStatus} type="onboarding" /></td>
 
-                      {/* 10. Modes */}
+                      {/* 15. KYC */}
+                      <td className="px-4 py-3"><StatusBadge status={c.kycStatus} type="kyc" /></td>
+
+                      {/* 16. Modes */}
                       <td className="px-4 py-3">
                         <div className="text-xs text-gray-500">Onboard: <span className="text-gray-700">{c.onboardingMode || '—'}</span></div>
                         <div className="text-xs text-gray-500">Payout: <span className="text-gray-700">{c.payoutMode || '—'}</span></div>
                       </td>
-
-                      {/* 11. Wallets */}
-                      <td className="px-4 py-3 text-xs text-gray-700 text-center">{c.walletCount ?? '—'}</td>
-
-                      {/* 12. Balance */}
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-800">{formatCurrency(c.totalWalletBalance)}</td>
-
-                      {/* 13. Deposits */}
-                      <td className="px-4 py-3 text-xs text-green-700 font-medium">{formatCurrency(c.totalDeposits)}</td>
-
-                      {/* 14. Withdrawals */}
-                      <td className="px-4 py-3 text-xs text-red-600 font-medium">{formatCurrency(c.totalWithdrawals)}</td>
-
-                      {/* 15. Interest Paid */}
-                      <td className="px-4 py-3 text-xs text-blue-600 font-medium">{formatCurrency(c.totalInterestPaid)}</td>
-
-                      {/* 16. Last Txn */}
-                      <td className="px-4 py-3 text-xs text-gray-500">{formatDate(c.lastTransactionDate)}</td>
 
                       {/* 17. Created */}
                       <td className="px-4 py-3 text-xs text-gray-500">{formatDate(c.createdAt)}</td>
