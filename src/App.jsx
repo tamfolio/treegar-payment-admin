@@ -34,6 +34,7 @@ import BankingScheduledPayments from "./Pages/TreegarBanking/BankingScheduledPay
 import BankingP2PTransactions from "./Pages/TreegarBanking/BankingP2PTransactions";
 import CustomerAnalytics from "./Pages/TreegarBanking/CustomerAnalytics";
 import DailyBalances from "./Pages/TreegarBanking/DailyBalances";
+import Overdraft from "./Pages/TreegarBanking/Overdraft";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -158,6 +159,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <CustomerProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/banking/overdraft"
+              element={
+                <ProtectedRoute>
+                  <Overdraft />
                 </ProtectedRoute>
               }
             />
