@@ -35,6 +35,7 @@ import BankingP2PTransactions from "./Pages/TreegarBanking/BankingP2PTransaction
 import CustomerAnalytics from "./Pages/TreegarBanking/CustomerAnalytics";
 import DailyBalances from "./Pages/TreegarBanking/DailyBalances";
 import Overdraft from "./Pages/TreegarBanking/Overdraft";
+import FintechPayouts from "./Pages/FintechPayouts";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -141,6 +142,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <RolesPermissions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/fintech-payouts"
+              element={
+                <ProtectedRoute>
+                  <FintechPayouts />
                 </ProtectedRoute>
               }
             />
