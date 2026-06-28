@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Layout from "../components/Layout";
 import {
   useFintechPayouts,
@@ -43,6 +43,46 @@ const formatDateShort = (v) => (v ? new Date(v).toLocaleDateString() : "—");
 
 const truncate = (str, n = 20) =>
   str && str.length > n ? str.slice(0, n) + "…" : str || "—";
+
+// ── Copy Button ──────────────────────────────────────────────────
+const CopyButton = ({ value }) => {
+  const [copied, setCopied] = useState(false);
+
+  const copy = useCallback(() => {
+    if (!value) return;
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }, [value]);
+
+  if (!value) return null;
+  return (
+    <button
+      onClick={copy}
+      title={copied ? "Copied!" : "Copy"}
+      className="ml-1 inline-flex items-center text-gray-300 hover:text-gray-600 transition-colors"
+    >
+      {copied ? (
+        <svg className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      )}
+    </button>
+  );
+};
+
+// Ref cell: truncated text + copy icon
+const RefCell = ({ value, maxLen = 18 }) => (
+  <div className="flex items-center font-mono text-xs text-gray-600 group" title={value || "—"}>
+    <span>{truncate(value, maxLen)}</span>
+    <CopyButton value={value} />
+  </div>
+);
 
 // ── Pagination (shared) ──────────────────────────────────────────
 const Pagination = ({ currentPage, totalPages, hasNextPage, hasPreviousPage, onPageChange }) => (
@@ -110,10 +150,14 @@ const DetailModal = ({ payoutId, onClose }) => {
 
   const Row = ({ label, value, mono }) => {
     if (value == null || value === "") return null;
+    const isString = typeof value === "string";
     return (
       <div className="flex justify-between text-sm gap-4">
         <dt className="text-gray-500 font-medium shrink-0">{label}</dt>
-        <dd className={`text-gray-900 text-right break-all ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
+        <dd className={`text-gray-900 text-right break-all flex items-center justify-end gap-1 ${mono ? "font-mono text-xs" : ""}`}>
+          {value}
+          {mono && isString && <CopyButton value={value} />}
+        </dd>
       </div>
     );
   };
@@ -293,7 +337,7 @@ const CompanyWalletsModal = ({ company, onClose }) => {
                         {wallet.accounts.map((acc) => (
                           <div key={acc.id} className="bg-gray-50 rounded p-2 text-xs flex justify-between items-start gap-2">
                             <div>
-                              <span className="font-mono font-medium text-gray-800">{acc.accountNumber}</span>
+                              <span className="font-mono font-medium text-gray-800 inline-flex items-center gap-1">{acc.accountNumber}<CopyButton value={acc.accountNumber} /></span>
                               <div className="text-gray-500 mt-0.5">{acc.accountName}</div>
                               <div className="text-gray-400">Bank code: {acc.bankCode} · {acc.provider}</div>
                             </div>
@@ -485,9 +529,9 @@ const PayoutsTab = () => {
                     </td>
                     <td className="px-4 py-3 text-xs font-semibold text-gray-800">{formatCurrency(p.amount, p.currency)}</td>
                     <td className="px-4 py-3"><StatusBadge status={p.status} /></td>
-                    <td className="px-4 py-3 text-xs text-gray-600 font-mono" title={p.clientReference}>{truncate(p.clientReference, 18)}</td>
-                    <td className="px-4 py-3 text-xs text-gray-600 font-mono" title={p.transactionReference}>{truncate(p.transactionReference, 18)}</td>
-                    <td className="px-4 py-3 text-xs text-gray-600 font-mono" title={p.providerReference}>{truncate(p.providerReference, 18)}</td>
+                    <td className="px-4 py-3"><RefCell value={p.clientReference} /></td>
+                    <td className="px-4 py-3"><RefCell value={p.transactionReference} /></td>
+                    <td className="px-4 py-3"><RefCell value={p.providerReference} /></td>
                     <td className="px-4 py-3 text-xs text-gray-500">{formatDate(p.createdAt)}</td>
                     <td className="px-4 py-3">
                       <button onClick={() => setSelectedPayoutId(p.id)} className="text-xs font-medium text-primary hover:underline">
