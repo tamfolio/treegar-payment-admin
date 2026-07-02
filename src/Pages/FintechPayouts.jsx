@@ -373,7 +373,7 @@ const EMPTY_PAYOUT_FILTERS = {
 };
 
 const PAYOUT_COLUMNS = [
-  "Company", "Beneficiary Account", "Amount", "Status",
+  "S/N", "Company", "Beneficiary Account", "Amount", "Status",
   "Client Ref", "Transaction Ref", "Provider Ref", "Date", "Actions",
 ];
 
@@ -518,6 +518,9 @@ const PayoutsTab = () => {
               ) : (
                 items.map((p, idx) => (
                   <tr key={p.id ?? idx} className="hover:bg-gray-50 align-top">
+                    <td className="px-4 py-3 text-xs text-gray-400 text-center">
+                      {(filters.pageNumber - 1) * filters.pageSize + idx + 1}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">{p.companyName || p.companyId || "—"}</div>
                       {p.companyName && p.companyId && <div className="text-xs text-gray-400">ID: {p.companyId}</div>}
