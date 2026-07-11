@@ -692,6 +692,23 @@ export const useTransactionFilterOptions = (options = {}) => {
   });
 };
 
+// Record loan repayment
+export const useLoanRepayment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ customerId, amount, narration }) => {
+      const response = await apiService.post('/loans/repayment', { customerId, amount, narration });
+      return response;
+    },
+    onSuccess: (_, { customerId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [CUSTOMERS_QUERY_KEYS.CUSTOMER_PROFILE, String(customerId)],
+      });
+    },
+  });
+};
+
 //Export transactions mutation
 export const useExportTransactions = () => {
   return useMutation({

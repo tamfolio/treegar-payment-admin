@@ -569,7 +569,7 @@ const PayoutsTab = () => {
 const EMPTY_COMPANY_FILTERS = { search: "", pageNumber: 1, pageSize: 20 };
 
 const COMPANY_COLUMNS = [
-  "Company", "Status", "Total Payouts", "Total Amount", "Completed", "Failed", "Pending", "Joined", "Actions",
+  "S/N", "Company", "Status", "Total Payouts", "Total Amount", "Completed", "Failed", "Pending", "Joined", "Actions",
 ];
 
 const CompaniesTab = () => {
@@ -663,8 +663,11 @@ const CompaniesTab = () => {
                   </td>
                 </tr>
               ) : (
-                items.map((c) => (
+                items.map((c, idx) => (
                   <tr key={c.companyId} className="hover:bg-gray-50 align-top">
+                    <td className="px-4 py-3 text-xs text-gray-400 text-center">
+                      {(filters.pageNumber - 1) * filters.pageSize + idx + 1}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">{c.companyName}</div>
                       <div className="text-xs text-gray-400 font-mono">{c.companyCode}</div>
