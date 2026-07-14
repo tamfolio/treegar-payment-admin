@@ -6,6 +6,7 @@ import ApprovalRules from "./ApprovalRules";
 import OnboardingApprovalModal from "./OnboardingApprovalModal";
 import PayoutModeModal from "./PayoutModeModal";
 import CustomerInflowFeesModal from "./CustomerInflowFeesModal";
+import { useLoanRepayment } from "../../hooks/customerHooks";
 
 const CustomerProfile = () => {
   const { customerId } = useParams();
@@ -15,6 +16,35 @@ const CustomerProfile = () => {
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [showInflowFeesModal, setShowInflowFeesModal] = useState(false);
+
+  // Loan repayment inline form
+  const [loanAmount, setLoanAmount] = useState('');
+  const [loanNarration, setLoanNarration] = useState('');
+  const [loanError, setLoanError] = useState('');
+  const [loanSuccess, setLoanSuccess] = useState(null);
+  const loanRepayment = useLoanRepayment();
+
+  const handleLoanRepayment = (e) => {
+    e.preventDefault();
+    const amt = parseFloat(loanAmount);
+    if (!amt || amt <= 0) { setLoanError('Enter a valid amount'); return; }
+    if (!loanNarration.trim()) { setLoanError('Narration is required'); return; }
+    setLoanError('');
+    loanRepayment.mutate(
+      { customerId: Number(customerId), amount: amt, narration: loanNarration.trim() },
+      {
+        onSuccess: (data) => {
+          if (data?.success === false) { setLoanError(data.message || 'Repayment failed'); return; }
+          setLoanSuccess(data);
+          setLoanAmount('');
+          setLoanNarration('');
+        },
+        onError: (err) => {
+          setLoanError(err?.response?.data?.message || err?.message || 'Failed to record repayment');
+        },
+      }
+    );
+  };
 
   const {
     data: customerResponse,
@@ -376,6 +406,89 @@ const CustomerProfile = () => {
                 </div>
               </div>
             </div>
+
+            {/* Loan Repayment */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Record Loan Repayment
+              </h3>
+
+              {loanSuccess ? (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <svg className="w-5 h-5 text-green-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p className="text-sm font-medium text-green-800">
+                      {loanSuccess.message || 'Loan repayment recorded successfully'}
+                    </p>
+                  </div>
+                  <dl className="space-y-2 text-sm border border-gray-100 rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <dt className="text-gray-500">Reference</dt>
+                      <dd className="font-mono text-xs text-gray-900 font-medium">{loanSuccess.data?.reference}</dd>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <dt className="text-gray-500">Amount</dt>
+                      <dd className="font-semibold text-gray-900">
+                        {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(loanSuccess.data?.amount)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <dt className="text-gray-500">Wallet Balance After</dt>
+                      <dd className="font-semibold text-gray-900">
+                        {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(loanSuccess.data?.walletBalanceAfter)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <dt className="text-gray-500">Processed At</dt>
+                      <dd className="text-gray-600 text-xs">{new Date(loanSuccess.data?.processedAt).toLocaleString()}</dd>
+                    </div>
+                  </dl>
+                  <button
+                    onClick={() => setLoanSuccess(null)}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Record another repayment
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleLoanRepayment} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Amount (₦)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={loanAmount}
+                      onChange={(e) => setLoanAmount(e.target.value)}
+                      placeholder="0.00"
+                      disabled={loanRepayment.isPending}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Narration</label>
+                    <input
+                      type="text"
+                      value={loanNarration}
+                      onChange={(e) => setLoanNarration(e.target.value)}
+                      placeholder="e.g. Loan repayment for November"
+                      disabled={loanRepayment.isPending}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  {loanError && <p className="text-xs text-red-600">{loanError}</p>}
+                  <button
+                    type="submit"
+                    disabled={loanRepayment.isPending}
+                    className="w-full px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:opacity-90 disabled:opacity-50"
+                  >
+                    {loanRepayment.isPending ? 'Recording...' : 'Record Repayment'}
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
 
           {/* Right Column - Settings & Dates */}
@@ -571,6 +684,8 @@ const CustomerProfile = () => {
           onClose={() => setShowInflowFeesModal(false)}
           customer={customer}
         />
+
+
       </div>
     </Layout>
   );
