@@ -269,19 +269,29 @@ const SendTab = ({ onSent }) => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className={labelCls}>Company</label>
-          <select
-            value={form.companyId}
-            onChange={(e) => setForm((p) => ({ ...p, companyId: e.target.value }))}
-            className={inputCls}
-            disabled={sendMutation.isPending || loadingCompanies}
-          >
-            <option value="">— Select a company —</option>
-            {companyOptions.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
+          {loadingCompanies ? (
+            <div className="flex items-center gap-3 py-2">
+              <svg className="animate-spin h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <p className="text-sm text-gray-500">Loading companies…</p>
+            </div>
+          ) : (
+            <select
+              value={form.companyId}
+              onChange={(e) => setForm((p) => ({ ...p, companyId: e.target.value }))}
+              className={inputCls}
+              disabled={sendMutation.isPending}
+            >
+              <option value="">— Select a company —</option>
+              {companyOptions.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div>
@@ -406,9 +416,9 @@ const HistoryTab = () => {
           >
             Clear Filters
           </button>
-          {isFetching && (
-            <span className="flex items-center text-xs text-gray-400">
-              <svg className="animate-spin mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24">
+          {isFetching && !isLoading && (
+            <span className="flex items-center gap-1.5 text-xs text-gray-400">
+              <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
@@ -457,15 +467,17 @@ const HistoryTab = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
-                    {HISTORY_COLUMNS.map((_, j) => (
-                      <td key={j} className="px-4 py-3">
-                        <div className="animate-pulse h-3 bg-gray-200 rounded w-16" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
+                <tr>
+                  <td colSpan={HISTORY_COLUMNS.length} className="px-6 py-16">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <svg className="animate-spin h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <p className="text-sm text-gray-500">Loading jobs…</p>
+                    </div>
+                  </td>
+                </tr>
               ) : items.length === 0 ? (
                 <tr>
                   <td

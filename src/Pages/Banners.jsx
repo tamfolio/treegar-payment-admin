@@ -94,22 +94,31 @@ const Banners = () => {
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
             Select Company
           </h3>
-          <div>
-            <label className={labelCls}>Company</label>
-            <select
-              value={companyId}
-              onChange={(e) => setCompanyId(e.target.value)}
-              className={inputCls}
-              disabled={loadingCompanies}
-            >
-              <option value="">— Select a company —</option>
-              {companyOptions.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {loadingCompanies ? (
+            <div className="flex items-center gap-3 py-2">
+              <svg className="animate-spin h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <p className="text-sm text-gray-500">Loading companies…</p>
+            </div>
+          ) : (
+            <div>
+              <label className={labelCls}>Company</label>
+              <select
+                value={companyId}
+                onChange={(e) => setCompanyId(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">— Select a company —</option>
+                {companyOptions.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* No company selected */}
@@ -118,13 +127,13 @@ const Banners = () => {
         )}
 
         {/* Loading */}
-        {companyId && (isLoading || isFetching) && (
-          <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
-            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+        {companyId && isLoading && (
+          <div className="bg-white rounded-lg shadow p-12 flex flex-col items-center justify-center gap-3">
+            <svg className="animate-spin h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            Loading…
+            <p className="text-sm text-gray-500">Loading banner…</p>
           </div>
         )}
 
@@ -146,7 +155,7 @@ const Banners = () => {
         )}
 
         {/* Banner card */}
-        {companyId && !isLoading && (banner || isNotFound) && (
+        {companyId && !isLoading && !isFetching && (banner || isNotFound) && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
