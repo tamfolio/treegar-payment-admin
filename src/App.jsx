@@ -36,6 +36,8 @@ import CustomerAnalytics from "./Pages/TreegarBanking/CustomerAnalytics";
 import DailyBalances from "./Pages/TreegarBanking/DailyBalances";
 import Overdraft from "./Pages/TreegarBanking/Overdraft";
 import FintechPayouts from "./Pages/FintechPayouts";
+import Banners from "./Pages/Banners";
+import BulkEmails from "./Pages/BulkEmails";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -150,6 +152,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <FintechPayouts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/banking/banners"
+              element={
+                <ProtectedRoute>
+                  <Banners />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/banking/bulk-emails"
+              element={
+                <ProtectedRoute>
+                  <BulkEmails />
                 </ProtectedRoute>
               }
             />
