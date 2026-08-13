@@ -72,6 +72,7 @@ const EMPTY_ACCOUNT_FILTERS = {
 const APP_COLUMNS = [
   "Customer",
   "Email",
+  "Requested Amount",
   "Status",
   "Submitted",
   "Reviewed",
@@ -347,6 +348,10 @@ const ApplicationsTab = ({ onApprove, onReject, onView }) => {
                     {/* Email */}
                     <td className="px-4 py-3 text-xs text-gray-600 max-w-[200px] truncate">
                       {app.customerEmail || "—"}
+                    </td>
+                    {/* Requested Amount */}
+                    <td className="px-4 py-3 text-xs font-semibold text-gray-800">
+                      {formatCurrency(app.requestedAmount)}
                     </td>
                     {/* Status */}
                     <td className="px-4 py-3">
