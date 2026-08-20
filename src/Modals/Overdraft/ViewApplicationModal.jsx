@@ -1,6 +1,15 @@
 import React from 'react';
 import { useOverdraftApplication } from '../../hooks/overdraftHooks';
 
+const formatCurrency = (v) =>
+  v != null
+    ? new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency: 'NGN',
+        maximumFractionDigits: 2,
+      }).format(v)
+    : '—';
+
 const formatDate = (v) =>
   v
     ? new Date(v).toLocaleString('en-NG', {
@@ -90,6 +99,26 @@ const ViewApplicationModal = ({ applicationId, onClose }) => {
                 <Row label="Name" value={application.customerName} />
                 <Row label="Email" value={application.customerEmail} />
                 <Row label="Customer ID" value={application.customerId} />
+              </div>
+
+              {/* Amount */}
+              <div className="mb-4">
+                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Amount
+                </h4>
+                <Row label="Requested Amount" value={formatCurrency(application.requestedAmount)} />
+                <Row
+                  label="Approved Amount"
+                  value={application.approvedAmount != null ? formatCurrency(application.approvedAmount) : '—'}
+                />
+                <Row
+                  label="Approved Daily Rate"
+                  value={
+                    application.approvedInterestRate != null
+                      ? `${(application.approvedInterestRate * 100).toFixed(4)}%/day`
+                      : '—'
+                  }
+                />
               </div>
 
               {/* Timeline */}

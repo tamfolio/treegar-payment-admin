@@ -73,6 +73,8 @@ const APP_COLUMNS = [
   "Customer",
   "Email",
   "Requested Amount",
+  "Approved Amount",
+  "Approved Rate",
   "Status",
   "Submitted",
   "Reviewed",
@@ -81,11 +83,18 @@ const APP_COLUMNS = [
 const ACCOUNT_COLUMNS = [
   "Customer",
   "Email",
+  "Wallet ID",
   "Limit",
+  "Headroom",
   "Outstanding",
+  "Accrued Fees",
   "Accrued Interest",
+  "Total Owed",
+  "Daily Rate",
   "Status",
   "Days Overdrawn",
+  "Overdrawn Since",
+  "Last Interest",
   "Created",
   "Actions",
 ];
@@ -353,6 +362,16 @@ const ApplicationsTab = ({ onApprove, onReject, onView }) => {
                     <td className="px-4 py-3 text-xs font-semibold text-gray-800">
                       {formatCurrency(app.requestedAmount)}
                     </td>
+                    {/* Approved Amount */}
+                    <td className="px-4 py-3 text-xs font-semibold text-green-700">
+                      {app.approvedAmount != null ? formatCurrency(app.approvedAmount) : "—"}
+                    </td>
+                    {/* Approved Rate */}
+                    <td className="px-4 py-3 text-xs text-gray-700">
+                      {app.approvedInterestRate != null
+                        ? `${(app.approvedInterestRate * 100).toFixed(4)}%/day`
+                        : "—"}
+                    </td>
                     {/* Status */}
                     <td className="px-4 py-3">
                       <StatusBadge status={app.status} type="application" />
@@ -613,24 +632,46 @@ const AccountsTab = ({ onUpdateLimit, onUpdateStatus, onWriteOff }) => {
                         {acc.customerName || "—"}
                       </div>
                       <div className="text-xs text-gray-400">
-                        Customer ID: {acc.customerId}
+                        ID: {acc.customerId}
                       </div>
                     </td>
                     {/* Email */}
                     <td className="px-4 py-3 text-xs text-gray-600 max-w-[200px] truncate">
                       {acc.customerEmail || "—"}
                     </td>
+                    {/* Wallet ID */}
+                    <td className="px-4 py-3 text-xs text-gray-500 font-mono">
+                      {acc.walletId || "—"}
+                    </td>
                     {/* Limit */}
                     <td className="px-4 py-3 text-xs font-semibold text-gray-800">
                       {formatCurrency(acc.overdraftLimit)}
+                    </td>
+                    {/* Headroom */}
+                    <td className="px-4 py-3 text-xs text-blue-600 font-medium">
+                      {formatCurrency(acc.headroomAvailable)}
                     </td>
                     {/* Outstanding */}
                     <td className="px-4 py-3 text-xs text-red-600 font-medium">
                       {formatCurrency(acc.outstandingBalance)}
                     </td>
+                    {/* Accrued Fees */}
+                    <td className="px-4 py-3 text-xs text-orange-600 font-medium">
+                      {formatCurrency(acc.accruedFees)}
+                    </td>
                     {/* Accrued Interest */}
                     <td className="px-4 py-3 text-xs text-purple-600 font-medium">
                       {formatCurrency(acc.accruedInterest)}
+                    </td>
+                    {/* Total Owed */}
+                    <td className="px-4 py-3 text-xs text-red-800 font-bold">
+                      {formatCurrency(acc.totalAmountOwed)}
+                    </td>
+                    {/* Daily Rate */}
+                    <td className="px-4 py-3 text-xs text-gray-700">
+                      {acc.dailyInterestRate != null
+                        ? `${(acc.dailyInterestRate * 100).toFixed(4)}%`
+                        : "—"}
                     </td>
                     {/* Status */}
                     <td className="px-4 py-3">
@@ -639,6 +680,14 @@ const AccountsTab = ({ onUpdateLimit, onUpdateStatus, onWriteOff }) => {
                     {/* Days Overdrawn */}
                     <td className="px-4 py-3 text-xs text-gray-700 text-center">
                       {acc.daysOverdrawn ?? 0}
+                    </td>
+                    {/* Overdrawn Since */}
+                    <td className="px-4 py-3 text-xs text-gray-500">
+                      {formatDate(acc.overdrawnSince)}
+                    </td>
+                    {/* Last Interest */}
+                    <td className="px-4 py-3 text-xs text-gray-500">
+                      {formatDate(acc.lastInterestAccruedAt)}
                     </td>
                     {/* Created */}
                     <td className="px-4 py-3 text-xs text-gray-500">
