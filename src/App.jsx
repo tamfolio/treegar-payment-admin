@@ -36,6 +36,7 @@ import CustomerAnalytics from "./Pages/TreegarBanking/CustomerAnalytics";
 import DailyBalances from "./Pages/TreegarBanking/DailyBalances";
 import Overdraft from "./Pages/TreegarBanking/Overdraft";
 import FintechPayouts from "./Pages/FintechPayouts";
+import CompanyWalletTransactions from "./Pages/CompanyWalletTransactions";
 import Banners from "./Pages/Banners";
 import BulkEmails from "./Pages/BulkEmails";
 
@@ -302,6 +303,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <CompanyTransactions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/company-wallet-transactions/:id"
+              element={
+                <ProtectedRoute>
+                  <CompanyWalletTransactions />
                 </ProtectedRoute>
               }
             />
