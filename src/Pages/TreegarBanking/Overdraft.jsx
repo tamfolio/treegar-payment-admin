@@ -10,6 +10,7 @@ import UpdateLimitModal from "../../Modals/Overdraft/UpdateLimitModal";
 import UpdateStatusModal from "../../Modals/Overdraft/UpdateStatusModal";
 import WriteOffConfirmModal from "../../Modals/Overdraft/WriteOffConfirmModal";
 import ViewApplicationModal from "../../Modals/Overdraft/ViewApplicationModal";
+import ViewAccountModal from "../../Modals/Overdraft/ViewAccountModal";
 
 // ── Shared styling (matches Customers.js) ─────────────────────
 const inputCls =
@@ -112,6 +113,7 @@ const Overdraft = () => {
   const [limitTarget, setLimitTarget] = useState(null);
   const [statusTarget, setStatusTarget] = useState(null);
   const [writeOffTarget, setWriteOffTarget] = useState(null);
+  const [viewAccountCustomerId, setViewAccountCustomerId] = useState(null);
 
   return (
     <Layout>
@@ -158,6 +160,7 @@ const Overdraft = () => {
           />
         ) : (
           <AccountsTab
+            onView={(acc) => setViewAccountCustomerId(acc.customerId)}
             onUpdateLimit={setLimitTarget}
             onUpdateStatus={setStatusTarget}
             onWriteOff={setWriteOffTarget}
@@ -189,6 +192,10 @@ const Overdraft = () => {
       <WriteOffConfirmModal
         account={writeOffTarget}
         onClose={() => setWriteOffTarget(null)}
+      />
+      <ViewAccountModal
+        customerId={viewAccountCustomerId}
+        onClose={() => setViewAccountCustomerId(null)}
       />
     </Layout>
   );
@@ -454,7 +461,7 @@ const ApplicationsTab = ({ onApprove, onReject, onView }) => {
 // ════════════════════════════════════════════════════════════════
 // ACCOUNTS TAB
 // ════════════════════════════════════════════════════════════════
-const AccountsTab = ({ onUpdateLimit, onUpdateStatus, onWriteOff }) => {
+const AccountsTab = ({ onView, onUpdateLimit, onUpdateStatus, onWriteOff }) => {
   const [filters, setFilters] = useState(EMPTY_ACCOUNT_FILTERS);
 
   const { data, isLoading, error, isFetching } = useOverdraftAccounts(filters);
@@ -696,6 +703,18 @@ const AccountsTab = ({ onUpdateLimit, onUpdateStatus, onWriteOff }) => {
                     {/* Actions */}
                     <td className="px-4 py-3">
                       <div className="flex items-center space-x-1.5">
+                        {/* View Detail */}
+                        <button
+                          onClick={() => onView(acc)}
+                          title="View Detail"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+
                         {/* Update Limit */}
                         <button
                           onClick={() => onUpdateLimit(acc)}
