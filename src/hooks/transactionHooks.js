@@ -6,6 +6,57 @@ export const TRANSACTIONS_QUERY_KEYS = {
   TRANSACTIONS: 'transactions',
   ACCOUNT_TRANSACTIONS: 'accountTransactions',
   COMPANY_TRANSACTIONS: 'companyTransactions',
+  COMPANY_WALLET_TRANSACTIONS: 'companyWalletTransactions',
+};
+
+// ============================================================================
+// COMPANY WALLET TRANSACTIONS
+// ============================================================================
+
+export const useCompanyWalletTransactions = (companyId, filters = {}, options = {}) => {
+  const {
+    walletId = '',
+    type = '',
+    direction = '',
+    reference = '',
+    fromDate = '',
+    toDate = '',
+    page = 1,
+    pageSize = 20,
+  } = filters;
+
+  return useQuery({
+    queryKey: [
+      TRANSACTIONS_QUERY_KEYS.COMPANY_WALLET_TRANSACTIONS,
+      companyId,
+      walletId,
+      type,
+      direction,
+      reference,
+      fromDate,
+      toDate,
+      page,
+      pageSize,
+    ],
+    queryFn: async () => {
+      const parsedCompanyId = parseInt(companyId, 10);
+      const params = { companyId: parsedCompanyId, page, pageSize };
+
+      if (walletId) params.walletId = parseInt(walletId, 10);
+      if (type?.trim()) params.type = type.trim();
+      if (direction) params.direction = direction;
+      if (reference?.trim()) params.reference = reference.trim();
+      if (fromDate) params.fromDate = fromDate;
+      if (toDate) params.toDate = toDate;
+
+      return apiService.get('/company-wallet-transactions', params);
+    },
+    enabled: !!companyId && !isNaN(parseInt(companyId, 10)) && parseInt(companyId, 10) > 0,
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 2,
+    ...options,
+  });
 };
 
 // ============================================================================

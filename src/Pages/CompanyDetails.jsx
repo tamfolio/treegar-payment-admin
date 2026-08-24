@@ -262,6 +262,13 @@ const CompanyDetails = () => {
               >
                 View Transactions
               </button>
+
+              <button
+                onClick={() => navigate(`/company-wallet-transactions/${id}`)}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+              >
+                View Wallet Transactions
+              </button>
             </div>
           </div>
         </div>
