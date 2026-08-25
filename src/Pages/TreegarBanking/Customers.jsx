@@ -55,6 +55,11 @@ const Customers = () => {
   // Derive filters from URL — survives navigation back
   const filters = {
     search:           searchParams.get('search')           || '',
+    tag:              searchParams.get('tag')              || '',
+    firstName:        searchParams.get('firstName')        || '',
+    lastName:         searchParams.get('lastName')         || '',
+    email:            searchParams.get('email')            || '',
+    phoneNumber:      searchParams.get('phoneNumber')      || '',
     companyId:        searchParams.get('companyId')        || '',
     customerTypeId:   searchParams.get('customerTypeId')   || '',
     status:           searchParams.get('status')           || '',
@@ -103,12 +108,67 @@ const Customers = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             <div className="xl:col-span-2">
-              <label className={labelCls}>Search <span className="text-gray-400 font-normal">(code, tag, email, phone, name)</span></label>
+              <label className={labelCls}>Search <span className="text-gray-400 font-normal">(code, tag, email, phone)</span></label>
               <input
                 type="text"
                 value={filters.search}
                 onChange={e => set('search', e.target.value)}
-                placeholder="Code, tag, email, phone, name…"
+                placeholder="Code, tag, email, phone…"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>Tag</label>
+              <input
+                type="text"
+                value={filters.tag}
+                onChange={e => set('tag', e.target.value)}
+                placeholder="P2P tag"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>First Name</label>
+              <input
+                type="text"
+                value={filters.firstName}
+                onChange={e => set('firstName', e.target.value)}
+                placeholder="First name"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>Last Name</label>
+              <input
+                type="text"
+                value={filters.lastName}
+                onChange={e => set('lastName', e.target.value)}
+                placeholder="Last name"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>Email</label>
+              <input
+                type="text"
+                value={filters.email}
+                onChange={e => set('email', e.target.value)}
+                placeholder="Email address"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>Phone</label>
+              <input
+                type="text"
+                value={filters.phoneNumber}
+                onChange={e => set('phoneNumber', e.target.value)}
+                placeholder="Phone number"
                 className={inputCls}
               />
             </div>
