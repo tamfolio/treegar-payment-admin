@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useCustomers, usePrefetchCustomerProfile } from '../../hooks/customerHooks';
 
@@ -49,17 +49,39 @@ const COLUMNS = [
 
 const Customers = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const prefetchCustomerProfile = usePrefetchCustomerProfile();
 
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  // Derive filters from URL — survives navigation back
+  const filters = {
+    search:           searchParams.get('search')           || '',
+    companyId:        searchParams.get('companyId')        || '',
+    customerTypeId:   searchParams.get('customerTypeId')   || '',
+    status:           searchParams.get('status')           || '',
+    kycStatus:        searchParams.get('kycStatus')        || '',
+    onboardingStatus: searchParams.get('onboardingStatus') || '',
+    createdFrom:      searchParams.get('createdFrom')      || '',
+    createdTo:        searchParams.get('createdTo')        || '',
+    pageNumber:       parseInt(searchParams.get('pageNumber') || '1'),
+    pageSize:         parseInt(searchParams.get('pageSize')   || '20'),
+  };
 
   const { data: customersResponse, isLoading, error, isFetching } = useCustomers(filters);
 
   const customers = customersResponse?.data?.items || [];
   const pg = customersResponse?.data?.pagination || {};
 
-  const set = (field, value) =>
-    setFilters(prev => ({ ...prev, [field]: value, pageNumber: 1 }));
+  const set = (field, value) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (value !== '' && value != null) next.set(field, String(value));
+      else next.delete(field);
+      if (field !== 'pageNumber') next.set('pageNumber', '1');
+      return next;
+    }, { replace: true });
+  };
+
+  const clearFilters = () => setSearchParams({}, { replace: true });
 
   const goToCustomer = (id) => {
     prefetchCustomerProfile(id);
@@ -156,7 +178,7 @@ const Customers = () => {
           </div>
 
           <div className="mt-4 flex items-center justify-between">
-            <button onClick={() => setFilters(EMPTY_FILTERS)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+            <button onClick={clearFilters} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
               Clear Filters
             </button>
             {isFetching && (
@@ -319,7 +341,7 @@ const Customers = () => {
               </p>
               <nav className="inline-flex rounded-md shadow-sm -space-x-px">
                 <button
-                  onClick={() => setFilters(p => ({ ...p, pageNumber: p.pageNumber - 1 }))}
+                  onClick={() => set('pageNumber', filters.pageNumber - 1)}
                   disabled={!pg.hasPrevPage}
                   className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -337,7 +359,7 @@ const Customers = () => {
                   return (
                     <button
                       key={p}
-                      onClick={() => setFilters(prev => ({ ...prev, pageNumber: p }))}
+                      onClick={() => set('pageNumber', p)}
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                         filters.pageNumber === p
                           ? 'z-10 bg-primary border-primary text-white'
@@ -349,7 +371,7 @@ const Customers = () => {
                   );
                 })}
                 <button
-                  onClick={() => setFilters(p => ({ ...p, pageNumber: p.pageNumber + 1 }))}
+                  onClick={() => set('pageNumber', filters.pageNumber + 1)}
                   disabled={!pg.hasNextPage}
                   className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
