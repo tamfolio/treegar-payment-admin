@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useCustomers, usePrefetchCustomerProfile } from '../../hooks/customerHooks';
@@ -47,12 +47,38 @@ const COLUMNS = [
   'KYC', 'Modes', 'Created', 'Actions',
 ];
 
+// Text fields that should debounce before hitting the API
+const TEXT_FIELDS = ['search', 'tag', 'firstName', 'lastName', 'email', 'phoneNumber'];
+
 const Customers = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const prefetchCustomerProfile = usePrefetchCustomerProfile();
 
-  // Derive filters from URL — survives navigation back
+  // Local state for text inputs — updates UI instantly, debounces to URL
+  const [textInputs, setTextInputs] = useState(() =>
+    Object.fromEntries(TEXT_FIELDS.map(f => [f, searchParams.get(f) || '']))
+  );
+  const isFirstRender = useRef(true);
+
+  // Sync text inputs → URL after 400ms of no typing
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    const timer = setTimeout(() => {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        TEXT_FIELDS.forEach(f => {
+          if (textInputs[f]) next.set(f, textInputs[f]);
+          else next.delete(f);
+        });
+        next.set('pageNumber', '1');
+        return next;
+      }, { replace: true });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [textInputs]);
+
+  // Derive non-text filters from URL (these update instantly)
   const filters = {
     search:           searchParams.get('search')           || '',
     tag:              searchParams.get('tag')              || '',
@@ -76,6 +102,7 @@ const Customers = () => {
   const customers = customersResponse?.data?.items || [];
   const pg = customersResponse?.data?.pagination || {};
 
+  // For selects / dates / pagination — instant URL update
   const set = (field, value) => {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
@@ -86,7 +113,10 @@ const Customers = () => {
     }, { replace: true });
   };
 
-  const clearFilters = () => setSearchParams({}, { replace: true });
+  const clearFilters = () => {
+    setTextInputs(Object.fromEntries(TEXT_FIELDS.map(f => [f, ''])));
+    setSearchParams({}, { replace: true });
+  };
 
   const goToCustomer = (id) => {
     prefetchCustomerProfile(id);
@@ -111,8 +141,8 @@ const Customers = () => {
               <label className={labelCls}>Search <span className="text-gray-400 font-normal">(code, tag, email, phone)</span></label>
               <input
                 type="text"
-                value={filters.search}
-                onChange={e => set('search', e.target.value)}
+                value={textInputs.search}
+                onChange={e => setTextInputs(p => ({ ...p, search: e.target.value }))}
                 placeholder="Code, tag, email, phone…"
                 className={inputCls}
               />
@@ -122,8 +152,8 @@ const Customers = () => {
               <label className={labelCls}>Tag</label>
               <input
                 type="text"
-                value={filters.tag}
-                onChange={e => set('tag', e.target.value)}
+                value={textInputs.tag}
+                onChange={e => setTextInputs(p => ({ ...p, tag: e.target.value }))}
                 placeholder="P2P tag"
                 className={inputCls}
               />
@@ -133,8 +163,8 @@ const Customers = () => {
               <label className={labelCls}>First Name</label>
               <input
                 type="text"
-                value={filters.firstName}
-                onChange={e => set('firstName', e.target.value)}
+                value={textInputs.firstName}
+                onChange={e => setTextInputs(p => ({ ...p, firstName: e.target.value }))}
                 placeholder="First name"
                 className={inputCls}
               />
@@ -144,8 +174,8 @@ const Customers = () => {
               <label className={labelCls}>Last Name</label>
               <input
                 type="text"
-                value={filters.lastName}
-                onChange={e => set('lastName', e.target.value)}
+                value={textInputs.lastName}
+                onChange={e => setTextInputs(p => ({ ...p, lastName: e.target.value }))}
                 placeholder="Last name"
                 className={inputCls}
               />
@@ -155,8 +185,8 @@ const Customers = () => {
               <label className={labelCls}>Email</label>
               <input
                 type="text"
-                value={filters.email}
-                onChange={e => set('email', e.target.value)}
+                value={textInputs.email}
+                onChange={e => setTextInputs(p => ({ ...p, email: e.target.value }))}
                 placeholder="Email address"
                 className={inputCls}
               />
@@ -166,8 +196,8 @@ const Customers = () => {
               <label className={labelCls}>Phone</label>
               <input
                 type="text"
-                value={filters.phoneNumber}
-                onChange={e => set('phoneNumber', e.target.value)}
+                value={textInputs.phoneNumber}
+                onChange={e => setTextInputs(p => ({ ...p, phoneNumber: e.target.value }))}
                 placeholder="Phone number"
                 className={inputCls}
               />
