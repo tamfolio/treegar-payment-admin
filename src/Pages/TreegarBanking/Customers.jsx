@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { useCustomers, usePrefetchCustomerProfile } from '../../hooks/customerHooks';
 
@@ -47,19 +47,76 @@ const COLUMNS = [
   'KYC', 'Modes', 'Created', 'Actions',
 ];
 
+// Text fields that should debounce before hitting the API
+const TEXT_FIELDS = ['search', 'tag', 'firstName', 'lastName', 'email', 'phoneNumber'];
+
 const Customers = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const prefetchCustomerProfile = usePrefetchCustomerProfile();
 
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  // Local state for text inputs — updates UI instantly, debounces to URL
+  const [textInputs, setTextInputs] = useState(() =>
+    Object.fromEntries(TEXT_FIELDS.map(f => [f, searchParams.get(f) || '']))
+  );
+  const isFirstRender = useRef(true);
+
+  // Sync text inputs → URL after 400ms of no typing
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    const timer = setTimeout(() => {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        TEXT_FIELDS.forEach(f => {
+          if (textInputs[f]) next.set(f, textInputs[f]);
+          else next.delete(f);
+        });
+        next.set('pageNumber', '1');
+        return next;
+      }, { replace: true });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [textInputs]);
+
+  // Derive non-text filters from URL (these update instantly)
+  const filters = {
+    search:           searchParams.get('search')           || '',
+    tag:              searchParams.get('tag')              || '',
+    firstName:        searchParams.get('firstName')        || '',
+    lastName:         searchParams.get('lastName')         || '',
+    email:            searchParams.get('email')            || '',
+    phoneNumber:      searchParams.get('phoneNumber')      || '',
+    companyId:        searchParams.get('companyId')        || '',
+    customerTypeId:   searchParams.get('customerTypeId')   || '',
+    status:           searchParams.get('status')           || '',
+    kycStatus:        searchParams.get('kycStatus')        || '',
+    onboardingStatus: searchParams.get('onboardingStatus') || '',
+    createdFrom:      searchParams.get('createdFrom')      || '',
+    createdTo:        searchParams.get('createdTo')        || '',
+    pageNumber:       parseInt(searchParams.get('pageNumber') || '1'),
+    pageSize:         parseInt(searchParams.get('pageSize')   || '20'),
+  };
 
   const { data: customersResponse, isLoading, error, isFetching } = useCustomers(filters);
 
   const customers = customersResponse?.data?.items || [];
   const pg = customersResponse?.data?.pagination || {};
 
-  const set = (field, value) =>
-    setFilters(prev => ({ ...prev, [field]: value, pageNumber: 1 }));
+  // For selects / dates / pagination — instant URL update
+  const set = (field, value) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (value !== '' && value != null) next.set(field, String(value));
+      else next.delete(field);
+      if (field !== 'pageNumber') next.set('pageNumber', '1');
+      return next;
+    }, { replace: true });
+  };
+
+  const clearFilters = () => {
+    setTextInputs(Object.fromEntries(TEXT_FIELDS.map(f => [f, ''])));
+    setSearchParams({}, { replace: true });
+  };
 
   const goToCustomer = (id) => {
     prefetchCustomerProfile(id);
@@ -81,12 +138,67 @@ const Customers = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             <div className="xl:col-span-2">
-              <label className={labelCls}>Search <span className="text-gray-400 font-normal">(code, tag, email, phone, name)</span></label>
+              <label className={labelCls}>Search <span className="text-gray-400 font-normal">(code, tag, email, phone)</span></label>
               <input
                 type="text"
-                value={filters.search}
-                onChange={e => set('search', e.target.value)}
-                placeholder="Code, tag, email, phone, name…"
+                value={textInputs.search}
+                onChange={e => setTextInputs(p => ({ ...p, search: e.target.value }))}
+                placeholder="Code, tag, email, phone…"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>Tag</label>
+              <input
+                type="text"
+                value={textInputs.tag}
+                onChange={e => setTextInputs(p => ({ ...p, tag: e.target.value }))}
+                placeholder="P2P tag"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>First Name</label>
+              <input
+                type="text"
+                value={textInputs.firstName}
+                onChange={e => setTextInputs(p => ({ ...p, firstName: e.target.value }))}
+                placeholder="First name"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>Last Name</label>
+              <input
+                type="text"
+                value={textInputs.lastName}
+                onChange={e => setTextInputs(p => ({ ...p, lastName: e.target.value }))}
+                placeholder="Last name"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>Email</label>
+              <input
+                type="text"
+                value={textInputs.email}
+                onChange={e => setTextInputs(p => ({ ...p, email: e.target.value }))}
+                placeholder="Email address"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>Phone</label>
+              <input
+                type="text"
+                value={textInputs.phoneNumber}
+                onChange={e => setTextInputs(p => ({ ...p, phoneNumber: e.target.value }))}
+                placeholder="Phone number"
                 className={inputCls}
               />
             </div>
@@ -156,7 +268,7 @@ const Customers = () => {
           </div>
 
           <div className="mt-4 flex items-center justify-between">
-            <button onClick={() => setFilters(EMPTY_FILTERS)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+            <button onClick={clearFilters} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
               Clear Filters
             </button>
             {isFetching && (
@@ -319,7 +431,7 @@ const Customers = () => {
               </p>
               <nav className="inline-flex rounded-md shadow-sm -space-x-px">
                 <button
-                  onClick={() => setFilters(p => ({ ...p, pageNumber: p.pageNumber - 1 }))}
+                  onClick={() => set('pageNumber', filters.pageNumber - 1)}
                   disabled={!pg.hasPrevPage}
                   className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -337,7 +449,7 @@ const Customers = () => {
                   return (
                     <button
                       key={p}
-                      onClick={() => setFilters(prev => ({ ...prev, pageNumber: p }))}
+                      onClick={() => set('pageNumber', p)}
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                         filters.pageNumber === p
                           ? 'z-10 bg-primary border-primary text-white'
@@ -349,7 +461,7 @@ const Customers = () => {
                   );
                 })}
                 <button
-                  onClick={() => setFilters(p => ({ ...p, pageNumber: p.pageNumber + 1 }))}
+                  onClick={() => set('pageNumber', filters.pageNumber + 1)}
                   disabled={!pg.hasNextPage}
                   className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >

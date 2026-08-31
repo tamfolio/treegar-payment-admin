@@ -16,6 +16,11 @@ export const CUSTOMERS_QUERY_KEYS = {
 export const useCustomers = (filters = {}, options = {}) => {
   const {
     search = '',
+    tag = '',
+    firstName = '',
+    lastName = '',
+    email = '',
+    phoneNumber = '',
     companyId = '',
     customerTypeId = '',
     status = '',
@@ -28,21 +33,31 @@ export const useCustomers = (filters = {}, options = {}) => {
   } = filters;
 
   return useQuery({
-    queryKey: [CUSTOMERS_QUERY_KEYS.CUSTOMERS, { 
-      search, 
-      companyId, 
-      customerTypeId, 
-      status, 
-      kycStatus, 
-      onboardingStatus, 
-      createdFrom, 
-      createdTo, 
-      pageNumber, 
-      pageSize 
+    queryKey: [CUSTOMERS_QUERY_KEYS.CUSTOMERS, {
+      search,
+      tag,
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+      companyId,
+      customerTypeId,
+      status,
+      kycStatus,
+      onboardingStatus,
+      createdFrom,
+      createdTo,
+      pageNumber,
+      pageSize,
     }],
     queryFn: async () => {
       const params = {
         ...(search && { search }),
+        ...(tag && { tag }),
+        ...(firstName && { firstName }),
+        ...(lastName && { lastName }),
+        ...(email && { email }),
+        ...(phoneNumber && { phoneNumber }),
         ...(companyId && { companyId }),
         ...(customerTypeId && { customerTypeId }),
         ...(status && { status }),

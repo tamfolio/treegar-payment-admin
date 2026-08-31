@@ -162,7 +162,7 @@ const CustomerProfile = () => {
                   {error?.message || "An error occurred"}
                 </p>
                 <button
-                  onClick={() => navigate("/banking/customers")}
+                  onClick={() => navigate(-1)}
                   className="mt-2 text-sm text-red-700 underline hover:text-red-900"
                 >
                   ← Back to Customers
@@ -200,7 +200,7 @@ const CustomerProfile = () => {
               The customer you're looking for doesn't exist or has been removed.
             </p>
             <button
-              onClick={() => navigate("/banking/customers")}
+              onClick={() => navigate(-1)}
               className="mt-4 text-sm text-primary underline hover:text-primary-dark"
             >
               ← Back to Customers
@@ -217,8 +217,8 @@ const CustomerProfile = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
-            <Link
-              to="/banking/customers"
+            <button
+              onClick={() => navigate(-1)}
               className="text-gray-500 hover:text-gray-700 mr-4"
             >
               <svg
@@ -234,7 +234,7 @@ const CustomerProfile = () => {
                   d="M10 19l-7-7m0 0l7-7m-7 7h18"
                 />
               </svg>
-            </Link>
+            </button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
                 {customer.businessName ||
