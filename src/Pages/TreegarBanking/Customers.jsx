@@ -48,7 +48,7 @@ const COLUMNS = [
 ];
 
 // Text fields that should debounce before hitting the API
-const TEXT_FIELDS = ['search', 'tag', 'firstName', 'lastName', 'email', 'phoneNumber'];
+const TEXT_FIELDS = ['search', 'tag', 'firstName', 'lastName', 'businessName', 'email', 'phoneNumber'];
 
 const Customers = () => {
   const navigate = useNavigate();
@@ -84,6 +84,7 @@ const Customers = () => {
     tag:              searchParams.get('tag')              || '',
     firstName:        searchParams.get('firstName')        || '',
     lastName:         searchParams.get('lastName')         || '',
+    businessName:     searchParams.get('businessName')     || '',
     email:            searchParams.get('email')            || '',
     phoneNumber:      searchParams.get('phoneNumber')      || '',
     companyId:        searchParams.get('companyId')        || '',
@@ -177,6 +178,17 @@ const Customers = () => {
                 value={textInputs.lastName}
                 onChange={e => setTextInputs(p => ({ ...p, lastName: e.target.value }))}
                 placeholder="Last name"
+                className={inputCls}
+              />
+            </div>
+
+            <div>
+              <label className={labelCls}>Business Name</label>
+              <input
+                type="text"
+                value={textInputs.businessName}
+                onChange={e => setTextInputs(p => ({ ...p, businessName: e.target.value }))}
+                placeholder="Business name"
                 className={inputCls}
               />
             </div>
