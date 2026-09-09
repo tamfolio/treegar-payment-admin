@@ -19,6 +19,7 @@ export const useCustomers = (filters = {}, options = {}) => {
     tag = '',
     firstName = '',
     lastName = '',
+    businessName = '',
     email = '',
     phoneNumber = '',
     companyId = '',
@@ -38,6 +39,7 @@ export const useCustomers = (filters = {}, options = {}) => {
       tag,
       firstName,
       lastName,
+      businessName,
       email,
       phoneNumber,
       companyId,
@@ -56,6 +58,7 @@ export const useCustomers = (filters = {}, options = {}) => {
         ...(tag && { tag }),
         ...(firstName && { firstName }),
         ...(lastName && { lastName }),
+        ...(businessName && { businessName }),
         ...(email && { email }),
         ...(phoneNumber && { phoneNumber }),
         ...(companyId && { companyId }),
@@ -755,6 +758,23 @@ export const useExportTransactions = () => {
     },
     onError: (error) => {
       console.error('Failed to export transactions:', error);
+    },
+  });
+};
+
+export const useCustomerStatement = () => {
+  return useMutation({
+    mutationFn: async ({ customerId, startDate, endDate, email }) => {
+      const params = {
+        StartDate: startDate,
+        EndDate: endDate,
+        export: 'pdf',
+        ...(email && { email }),
+      };
+      const response = await apiService.get(`/customers/${customerId}/statement`, params, {
+        responseType: 'blob',
+      });
+      return response;
     },
   });
 };

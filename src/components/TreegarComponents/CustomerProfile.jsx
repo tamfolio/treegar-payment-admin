@@ -6,6 +6,7 @@ import ApprovalRules from "./ApprovalRules";
 import OnboardingApprovalModal from "./OnboardingApprovalModal";
 import PayoutModeModal from "./PayoutModeModal";
 import CustomerInflowFeesModal from "./CustomerInflowFeesModal";
+import CustomerStatementModal from "./CustomerStatementModal";
 import { useLoanRepayment } from "../../hooks/customerHooks";
 
 const CustomerProfile = () => {
@@ -16,6 +17,7 @@ const CustomerProfile = () => {
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [showInflowFeesModal, setShowInflowFeesModal] = useState(false);
+  const [showStatementModal, setShowStatementModal] = useState(false);
 
   // Loan repayment inline form
   const [loanAmount, setLoanAmount] = useState('');
@@ -578,7 +580,7 @@ const CustomerProfile = () => {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-gray-900">
-                            {wallet.currencyCode}
+                            {wallet.walletName || wallet.currencyCode}
                           </span>
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -591,7 +593,12 @@ const CustomerProfile = () => {
                           </span>
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          Wallet #{wallet.walletId} · {wallet.currencyName}
+                          {wallet.walletType && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600 mr-1.5">
+                              {wallet.walletType}
+                            </span>
+                          )}
+                          {wallet.currencyCode} · #{wallet.walletId}
                         </p>
                       </div>
                       <div className="text-right">
@@ -652,6 +659,12 @@ const CustomerProfile = () => {
                 >
                   Inflow Fees Settings
                 </button>
+                <button
+                  onClick={() => setShowStatementModal(true)}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                >
+                  Download Statement
+                </button>
                 <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
                   View Account Balance
                 </button>
@@ -682,6 +695,12 @@ const CustomerProfile = () => {
         <CustomerInflowFeesModal
           isOpen={showInflowFeesModal}
           onClose={() => setShowInflowFeesModal(false)}
+          customer={customer}
+        />
+
+        <CustomerStatementModal
+          isOpen={showStatementModal}
+          onClose={() => setShowStatementModal(false)}
           customer={customer}
         />
 
