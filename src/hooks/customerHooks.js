@@ -759,3 +759,20 @@ export const useExportTransactions = () => {
   });
 };
 
+export const useCustomerStatement = () => {
+  return useMutation({
+    mutationFn: async ({ customerId, startDate, endDate, email }) => {
+      const params = {
+        StartDate: startDate,
+        EndDate: endDate,
+        export: 'pdf',
+        ...(email && { email }),
+      };
+      const response = await apiService.get(`/customers/${customerId}/statement`, params, {
+        responseType: 'blob',
+      });
+      return response;
+    },
+  });
+};
+
