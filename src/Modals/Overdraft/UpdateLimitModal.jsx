@@ -91,7 +91,7 @@ const UpdateLimitModal = ({ account, onClose }) => {
             </label>
             <input
               type="number"
-              step="0.0001"
+              step="any"
               min="0"
               max="1"
               value={dailyInterestRate}

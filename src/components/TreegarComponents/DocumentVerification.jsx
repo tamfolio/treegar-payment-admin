@@ -101,7 +101,7 @@ const DocumentVerification = () => {
           // Create a proper authenticated request
           const response = await fetch(`https://treegar-admin-api.treegar.com:8444${document.fileUrl}`, {
             headers: {
-              'x-api-key': 'treegaristhePnce@@!!!9801',
+              'x-api-key': import.meta.env.VITE_API_KEY,
               'Authorization': `Bearer ${localStorage.getItem('authToken')}`
             }
           });
