@@ -6,8 +6,7 @@ const BASE_URL = isDevelopment
   ? 'https://treegar-admin-api.treegar.com:8444/api/Admin' // Use proxy in development
   : 'https://treegar-admin-api.treegar.com:8444/api/Admin'; // Direct API in production
 
-// API Key - directly declared here
-const API_KEY = 'treegaristhePnce@@!!!9801';
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
