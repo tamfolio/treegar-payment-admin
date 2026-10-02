@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node api.js && vite",
+    "build": "node api.js && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "scan": "node scripts/malware-check.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.16",
